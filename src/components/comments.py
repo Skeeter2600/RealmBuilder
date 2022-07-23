@@ -24,3 +24,21 @@ def rebuild_comments_table():
     cur.execute(create_sql)
     conn.commit()
     conn.close()
+
+
+def get_component_comments(comp_id, comp_type):
+    """
+    This function will get the comments associated with
+    a component and the reactions associated to them
+    :return: list of comments and their reactions
+        ([[comment, [reactions]], [comment, [reactions]]])
+    """
+    conn = connect()
+    cur = conn.cursor()
+
+    request = """
+        SELECT * FROM comments
+            INNER JOIN %s""" + 's' + """ AS %s
+        WHERE %s.component_id = %s
+        """
+

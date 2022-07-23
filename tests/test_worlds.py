@@ -1,6 +1,5 @@
 import unittest
-from src.worlds import *
-from src.db_utils import connect
+from src.utils.db_utils import connect
 
 
 class TestChat(unittest.TestCase):

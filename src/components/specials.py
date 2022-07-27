@@ -15,7 +15,7 @@ def rebuild_specials_table():
             id                  SERIAL PRIMARY KEY,
             name                TEXT NOT NULL,
             description         TEXT NOT NULL,
-            hidden_description  TEXT,
+            hidden_description  TEXT DEFAULT NULL,
             revealed            BOOLEAN NOT NULL DEFAULT 'f',
             revealed_date       TIMESTAMP,
             world_id            INTEGER NOT NULL REFERENCES worlds

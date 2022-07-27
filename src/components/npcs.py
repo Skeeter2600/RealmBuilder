@@ -17,7 +17,7 @@ def rebuild_npcs_table():
             age                 INTEGER,
             occupation          TEXT,
             description         TEXT NOT NULL,
-            hidden_description  TEXT,
+            hidden_description  TEXT DEFAULT NULL,
             revealed            BOOLEAN NOT NULL DEFAULT 'f',
             revealed_date       TIMESTAMP,
             world_id            INTEGER NOT NULL REFERENCES worlds

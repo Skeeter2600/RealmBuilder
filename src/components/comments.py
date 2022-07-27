@@ -16,6 +16,8 @@ def rebuild_comments_table():
             user_id             TEXT NOT NULL,
             comment             TEXT NOT NULL,
             time                TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            likes               INTEGER DEFAULT 0,
+            dislikes            INTEGER DEFAULT 0,
             component_id        INTEGER NOT NULL,
             component_type      TEXT NOT NULL
         )

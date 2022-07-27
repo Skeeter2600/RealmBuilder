@@ -138,6 +138,56 @@ def load_data():
 
     add_npcs_hidden = """
         INSERT INTO npcs(name, age, occupation, description, hidden_description, world_id) VALUES
+            ('Oliver Quinn', 39, 'Trader','Oliver Quinn is a man standing 5''11" with dirty blonde hair. He is married
+                to Susie Quinn and had a son, Robby, who was tragically lost to travelling adventurers', 
+                'Oliver made a deal with Kyneas in order to get his son back and prevent the adventurers from ever
+                killing his son. He went back in time to prevent them from ever becoming adventurers, but was killed
+                due to them denying his reality and doing things how they wanted to.', 3),
+            ('Richard Nixon', 109, 'President of the United States', 'Richard Milhous Nixon was the 37th president of 
+                the United States, serving from 1969 to 1974. He was a member of the Republican Party who previously 
+                served as a representative and senator from California and was the 36th vice president from 1953 to 
+                1961', 'Was responsible for the Watergate Scandal', 6),
+            ('Evelyn', 28, 'Adventurer', 'Evelyn was a half elf warlock who''s allegiance was to an unknown being ', 
+                'His allegiance was alter revealed to be to Kyneas, and fought against the party, during which he lost
+                his life', 3)
         """
+    cur.execute(add_npcs_hidden)
+    conn.commit()
+
+    add_specials_non_hidden = """
+        INSERT INTO specials(name, description, world_id) VALUES
+            ('Jamestown Key to the City', 'A city to the city of Jamestown, NY', 6),
+            ('Soul Phylactery', 'A large crystal with the souls of countless tortured individuals trapped within', 5),
+            ('The Royal Bremodium', 'This place is the vacation spot of many guards in the Watch.', 1)
+        """
+    cur.execute(add_specials_non_hidden)
+    conn.commit()
+
+    add_specials_hidden = """
+        INSERT INTO specials(name, description, hidden_description, world_id) VALUES
+            ('Ring of Gander', 'A ring to improve the user''s charisma with those of the same sex', 'Is actually the
+                Ring of Gender. In addition to the other effect, it also binds with the wearer transforming them into the
+                opposite sex over the course of the next 2 weeks. The effect remains on those of the wearer''s initial gender',
+                3),
+            ('The Golden Candle', 'Hidden in the depth of the Carcer Caverns lies the Golden Candle, worshiped
+                by the countless kobolds that lie within', 'The candle is the prison for the demon Kyneas and will release
+                him if ever extinguished. The kobolds protected it from ever happening, they never worshiped it.', 3)
+        """
+    cur.execute(add_specials_hidden)
+    conn.commit()
+
+    add_comments = """
+        INSERT INTO comments(user_id, comment, time, likes, dislikes, component_id, component_type) VALUES
+            (1, 'hey, dats me!', '2022-01-29 13:17:32', 1, 0, 1, 'npcs'),
+            (3, 'That is my world', '2022-07-07 04:01:00', 2, 0, 3, 'worlds'),
+            (3, 'That is my world', '2022-07-07 04:02:00', 1, 1, 2, 'worlds'),
+            (4, 'Didn''t see that coming', '2020-05-12 17:18:22', 5, 0, 1, 'npcs'),
+            (5, 'hey, dats me!', '2022-01-29 13:17:32', 2, 0, 4, 'npcs'),
+            (5, 'hey, dats me again!', '2022-01-29 13:18:32', 1, 1, 5, 'npcs'),
+            (5, 'hey, dats me again again!', '2022-01-29 13:19:32', 0, 0, 6, 'npcs'),
+            (2, 'I live there...', '2019-05-05 11:11:11', 6, 0, 6, 'cities')
+        """
+    cur.execute(add_comments)
+    conn.commit()
 
     conn.close()

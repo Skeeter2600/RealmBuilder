@@ -1,7 +1,7 @@
 from src.utils.db_utils import connect
 
 
-def rebuild_city_image_linker_table():
+def rebuild_city_image_linker():
     """
     This function will empty the city image linker table
     """
@@ -11,9 +11,9 @@ def rebuild_city_image_linker_table():
         DROP TABLE if EXISTS city_image_linker CASCADE;
         """
     create_sql = """
-        CREATE TABLE city_npc_linker(
+        CREATE TABLE city_image_linker(
             id              SERIAL PRIMARY KEY,
-            city_id         INTEGER NOT NULL REFERENCES cities,
+            city_id         INTEGER NOT NULL REFERENCES citys,
             image           bytea NOT NULL
         )
         """

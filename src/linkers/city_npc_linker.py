@@ -1,7 +1,7 @@
 from src.utils.db_utils import connect
 
 
-def rebuild_city_npc_linker_table():
+def rebuild_city_npc_linker():
     """
     This function will empty the city npc linker table
     """
@@ -13,7 +13,7 @@ def rebuild_city_npc_linker_table():
     create_sql = """
         CREATE TABLE city_npc_linker(
             id              SERIAL PRIMARY KEY,
-            city_id         INTEGER NOT NULL REFERENCES cities,
+            city_id         INTEGER NOT NULL REFERENCES citys,
             npc_id          INTEGER NOT NULL REFERENCES npcs
         )
         """

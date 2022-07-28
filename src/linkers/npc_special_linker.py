@@ -1,7 +1,7 @@
 from src.utils.db_utils import connect
 
 
-def rebuild_npc_special_linker_table():
+def rebuild_npc_special_linker():
     """
     This function will empty the npc special linker table
     """

@@ -1,7 +1,7 @@
 from src.utils.db_utils import connect
 
 
-def rebuild_npc_image_linker_table():
+def rebuild_npc_image_linker():
     """
     This function will empty the npc image linker table
     """
@@ -11,7 +11,7 @@ def rebuild_npc_image_linker_table():
         DROP TABLE if EXISTS npc_image_linker CASCADE;
         """
     create_sql = """
-        CREATE TABLE npc_npc_linker(
+        CREATE TABLE npc_image_linker(
             id              SERIAL PRIMARY KEY,
             npc_id          INTEGER NOT NULL REFERENCES npcs,
             image           bytea NOT NULL

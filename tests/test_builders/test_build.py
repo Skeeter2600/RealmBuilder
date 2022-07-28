@@ -7,15 +7,15 @@ def load_data():
     cur = conn.cursor()
     rebuild_tables()
 
-    # passwords & ids for users
-    # Beck:    RiamChesteroot26, 1
-    # RyanR:   PabloWeegee69, 2
-    # RyanC:   ThuaccTwumps, 3
-    # Charles: CalvionNeedsAA, 4
-    # Nolan:   TinkerTillYaMakeIt, 5
-    # Taylor:  TomathyPickles123, 6
-    # Josh:    ShadowWatcher58, 7
-    # Jacob:   MarkFellowsRulez, 8
+    # passwords & session key for users
+    # Beck:    RiamChesteroot26
+    # RyanR:   PabloWeegee69
+    # RyanC:   ThuaccTwumps
+    # Charles: CalvionNeedsAA
+    # Nolan:   TinkerTillYaMakeIt
+    # Taylor:  TomathyPickles123
+    # Josh:    ShadowWatcher58
+    # Jacob:   MarkFellowsRulez
 
     add_users = """
         INSERT INTO users(username, password, email) VALUES 
@@ -52,18 +52,22 @@ def load_data():
     cur.execute(add_worlds)
     conn.commit()
 
-    add_citys = """
+    #    cities and their ids, worlds, and reveal status
+
+    # New Meridia     | 1 | Saviors' Cradle Sword Coast | False
+    # Greenest        | 2 | Three Lords Sword Coast     | False
+    # Charlote        | 3 | Dralbrar                    | False
+    # Jamestown       | 4 | Real World                  | True
+    # Meridia         | 5 | Saviors' Cradle Sword Coast | True
+    # Saltmarsh       | 6 | Saltmarsh                   | True
+    # Greenest        | 7 | Saviors' Cradle Sword Coast | True
+    # Washington D.C. | 8 | Real World                  | True
+
+    add_citys_unrevealed = """
         INSERT INTO citys(name, population, song, trades, aesthetic, description, world_id) VALUES
-            ('Jamestown', 28712, 'https://www.youtube.com/watch?v=5KiAWfu7cu8', 'Furniture',
-                'Small City Vibes', 
-                    'Jamestown is a city in southern Chautauqua County, New York, United States. 
-                    The population was 28,712 at the 2020 census. Situated between Lake Erie to the north and the 
-                    Allegheny National Forest to the south, Jamestown is the largest population center in the county. 
-                    Nearby Chautauqua Lake is a freshwater resource used by fishermen, boaters, and naturalists.',
-                6),
-            ('Meridia', 1392, 'https://www.youtube.com/watch?v=ojEyUU2M6z4', 'Farming, Storefronts',
+            ('New Meridia', 10392, 'https://www.youtube.com/watch?v=ojEyUU2M6z4', 'Farming, Storefronts',
                 'Small town vibes',
-                    'Meridia is a small town in which many people flock for various reasons. Too many
+                    'New Meridia is a medium sized town in which many people flock for various reasons. Too many
                      to put here.',
                 3),
             ('Greenest', 123, 'https://www.youtube.com/watch?v=EiyuZ7CTsbY', 'Storefronts',
@@ -71,11 +75,6 @@ def load_data():
                     'Greenest is a small village in which many people flock for various reasons. Too many
                      to put here.',
                 4),
-            ('Greenest', 456, 'https://www.youtube.com/watch?v=EiyuZ7CTsbY', 'Storefronts',
-                'Small village vibes',
-                    'Greenest is a small village in which many people flock for various reasons. Too many
-                     to put here.',
-                3),
             ('Charlote', 112, 'https://www.youtube.com/watch?v=Y_tPE3o5NWk', 'Fishing and Farming',
                 'historic sector of an older city, with ivy covering the walls of most of the buildings 
                     and running along the ground',
@@ -85,23 +84,64 @@ def load_data():
                     ditches taking it to the fields.',
                 1)
         """
-    cur.execute(add_citys)
+    cur.execute(add_citys_unrevealed)
     conn.commit()
 
-    add_npcs_non_hidden = """
+    add_citys_revealed = """
+        INSERT INTO citys(name, population, song, trades, aesthetic, description, world_id, 
+            revealed, revealed_date) VALUES
+            ('Jamestown', 28712, 'https://www.youtube.com/watch?v=5KiAWfu7cu8', 'Furniture',
+                'Small City Vibes', 
+                    'Jamestown is a city in southern Chautauqua County, New York, United States. 
+                    The population was 28,712 at the 2020 census. Situated between Lake Erie to the north and the 
+                    Allegheny National Forest to the south, Jamestown is the largest population center in the county. 
+                    Nearby Chautauqua Lake is a freshwater resource used by fishermen, boaters, and naturalists.',
+                6, 't', '1886-04-19 01:23:45'),
+            ('Meridia', 1392, 'https://www.youtube.com/watch?v=ojEyUU2M6z4', 'Farming, Storefronts',
+                'Small town vibes',
+                    'Meridia is a small town in which many people flock for various reasons. Too many
+                     to put here.',
+                3, 't', '2018-07-12 14:32:17'),
+            ('Saltmarsh', 5091, 'https://www.youtube.com/watch?v=eCMO-LpKsU8', 'Sailing, Trading',
+                'English fishing town of the 14th Century', 
+                    'Saltmarsh is a small, respectable fishing town in the Viscounty of Salinmoor, in the southernmost 
+                    part of Keoland, noted for adventuring although it is normally a sleepy little town.',
+                2, 't', '2019-08-19 20:19:00'),
+            ('Greenest', 456, 'https://www.youtube.com/watch?v=EiyuZ7CTsbY', 'Storefronts',
+                    'Small village vibes',
+                        'Greenest is a small village in which many people flock for various reasons. Too many
+                         to put here.',
+                    3, 't', '2019-12-11 19:22:33'),
+            ('Washington D.C.', 689545, 'https://www.youtube.com/watch?v=vPKp29Luryc', 'Politics, Museums, Stores',
+                    '', 
+                        'Washington, D.C., formally the District of Columbia, also known as just Washington or simply 
+                        D.C., is the capital city and federal district of the United States. It is located on the east 
+                        bank of the Potomac River, which forms its southwestern and southern border with the U.S. state 
+                        of Virginia, and it shares a land border with the U.S. state of Maryland on its remaining sides. 
+                        The city was named for George Washington, a Founding Father and the first president of the 
+                        United States, and the federaldistrict is named after Columbia, a female personification of the 
+                        nation. As the seat of the U.S. federal government and several international organizations, the 
+                        city is an important world political capital. It is one of the most visited cities in the U.S., 
+                        seeing over 20 million visitors in 2016.',
+                    6, 't', '1790-07-16 12:00:00')
+        """
+    cur.execute(add_citys_revealed)
+    conn.commit()
+
+    #    npcs and their ids, worlds, location, hidden description status, and reveal status
+
+    # Margarette Chesteroot | 1 | Dralbrar                    | Charlote        | False | False
+    # Soni Paustel          | 2 | Out of Touch                | Null            | False | False
+    # Prometheus            | 3 | Three Lords Sword Coast     | Null            | False | False
+    # Prometheus            | 4 | Saviors' Cradle Sword Coast | Meridia         | False | False
+    # Riam Chesteroot       | 5 | Saltmarsh                   | Saltmarsh       | False | True
+    # Prometheus            | 6 | Out of Touch                | Null            | False | True
+    # Oliver Quinn          | 7 | Saviors' Cradle Sword Coast | Meridia         | True  | True
+    # Richard Nixon         | 8 | Real World                  | Washington D.C. | True  | True
+    # Evelyn                | 9 | Saviors' Cradle Sword Coast | Null            | True  | False
+
+    add_npcs_non_hidden_unrevealed = """
         INSERT INTO npcs(name, age, occupation, description, world_id) VALUES
-            ('Riam Chesteroot', 27, 'Captain', 
-                'Riam Chesteroot is a 5’8” tall human weighing in at around 130 lbs. He has long, messy, black hair, 
-                    which is often pushed down and over his left ear. He has a slim face with a small nose and prominent
-                    chin line, as well as two different colored eyes, his left being blue and his right being green. 
-                    Riam often wears darker colored clothes, not out of edginess, but due to not caring about how he 
-                    looks and it often being easier to maintain due to spots being harder to see. When standing around, 
-                    he is often shuffling his deck of cards, a memento from home and what he uses for his spellbook. 
-                    The 3 of spades is missing from this deck. He usually will stay away from the center of action, 
-                    watching and waiting for a perfect time to make a move. Chesteroot just wants to be able to call a 
-                    group of people his “family.” His history of distrust with those who were his family stunt his 
-                    ability to keep others from getting close.',
-                2),
             ('Margarette Chesteroot', 67, 'Caretaker of the Vine',
                 'Margarete Chesteroot has the title of “Caretaker of the Vine,” something given to the eldest individual
                     in Charlote. Her main duty is to look after The Vine and make sure of its well being.',
@@ -125,42 +165,118 @@ def load_data():
                     knowledge of clothes and its reasons. He will awkwardly talk about the players clothes with a little
                     bit of knowledge, but ultimately trail off.',
                 3
-            ),
+            )
+        """
+    cur.execute(add_npcs_non_hidden_unrevealed)
+    conn.commit()
+
+    add_npcs_non_hidden_revealed = """
+        INSERT INTO npcs(name, age, occupation, description, world_id, revealed, revealed_date) VALUES
+            ('Riam Chesteroot', 27, 'Captain',
+                'Riam Chesteroot is a 5’8” tall human weighing in at around 130 lbs. He has long, messy, black hair, 
+                    which is often pushed down and over his left ear. He has a slim face with a small nose and prominent
+                    chin line, as well as two different colored eyes, his left being blue and his right being green. 
+                    Riam often wears darker colored clothes, not out of edginess, but due to not caring about how he 
+                    looks and it often being easier to maintain due to spots being harder to see. When standing around, 
+                    he is often shuffling his deck of cards, a memento from home and what he uses for his spellbook. 
+                    The 3 of spades is missing from this deck. He usually will stay away from the center of action, 
+                    watching and waiting for a perfect time to make a move. Chesteroot just wants to be able to call a 
+                    group of people his “family.” His history of distrust with those who were his family stunt his 
+                    ability to keep others from getting close.',
+                2, 't', '2020-01-29 13:18:32'),
             ('Prometheus', 9999999, 'Scholar',
                 'Prometheus is a medium robotesk being with a knack for tinkering. Despite his intelligence, he has no 
                     knowledge of clothes and its reasons. He has been adopted over the past countless years
                     to become the arch scholar of the area and knows more about what might be going on that anyone esle',
-                6
-            )
+                6, 't', '2021-03-04 12:14:52')
         """
-    cur.execute(add_npcs_non_hidden)
+    cur.execute(add_npcs_non_hidden_revealed)
     conn.commit()
 
-    add_npcs_hidden = """
-        INSERT INTO npcs(name, age, occupation, description, hidden_description, world_id) VALUES
-            ('Oliver Quinn', 39, 'Trader','Oliver Quinn is a man standing 5''11" with dirty blonde hair. He is married
+    add_npcs_hidden_revealed = """
+        INSERT INTO npcs(name, age, occupation, description, hidden_description, world_id, 
+            revealed, revealed_date) VALUES
+            ('Oliver Quinn', 39, 'Trader', 
+                'Oliver Quinn is a man standing 5''11" with dirty blonde hair. He is married
                 to Susie Quinn and had a son, Robby, who was tragically lost to travelling adventurers', 
                 'Oliver made a deal with Kyneas in order to get his son back and prevent the adventurers from ever
                 killing his son. He went back in time to prevent them from ever becoming adventurers, but was killed
-                due to them denying his reality and doing things how they wanted to.', 3),
-            ('Richard Nixon', 109, 'President of the United States', 'Richard Milhous Nixon was the 37th president of 
-                the United States, serving from 1969 to 1974. He was a member of the Republican Party who previously 
-                served as a representative and senator from California and was the 36th vice president from 1953 to 
-                1961', 'Was responsible for the Watergate Scandal', 6),
+                due to them denying his reality and doing things how they wanted to.', 
+                3, 't', '2020-05-12 17:18:22'),
+            ('Richard Nixon', 109, 'President of the United States',
+                'Richard Milhous Nixon was the 37th president of the United States, serving from 1969 to 1974. He was 
+                a member of the Republican Party who previously served as a representative and senator from California 
+                and was the 36th vice president from 1953 to 1961', 
+                'Was responsible for the Watergate Scandal', 
+                6, 't', '1972-06-17 12:54:21')
+        """
+    cur.execute(add_npcs_hidden_revealed)
+    conn.commit()
+
+    add_npcs_hidden_unrevealed = """
+        INSERT INTO npcs(name, age, occupation, description, hidden_description, world_id) VALUES
             ('Evelyn', 28, 'Adventurer', 'Evelyn was a half elf warlock who''s allegiance was to an unknown being ', 
                 'His allegiance was alter revealed to be to Kyneas, and fought against the party, during which he lost
                 his life', 3)
         """
-    cur.execute(add_npcs_hidden)
+    cur.execute(add_npcs_hidden_unrevealed)
     conn.commit()
 
-    add_specials_non_hidden = """
-        INSERT INTO specials(name, description, world_id) VALUES
-            ('Jamestown Key to the City', 'A city to the city of Jamestown, NY', 6),
-            ('Soul Phylactery', 'A large crystal with the souls of countless tortured individuals trapped within', 5),
-            ('The Royal Bremodium', 'This place is the vacation spot of many guards in the Watch.', 1)
+    #    npcs and their ids, worlds, location, hidden description status, and reveal status
+
+    # Margarette Chesteroot | 1 | Dralbrar                    | Charlote             | False | False
+    # Soni Paustel          | 2 | Out of Touch                | Null                 | False | False
+    # Prometheus            | 3 | Three Lords Sword Coast     | Greenest(2)          | False | False
+    # Prometheus            | 4 | Saviors' Cradle Sword Coast | Meridia, Greenest(7) | False | False
+    # Riam Chesteroot       | 5 | Saltmarsh                   | Saltmarsh            | False | True
+    # Prometheus            | 6 | Out of Touch                | Null                 | False | True
+    # Oliver Quinn          | 7 | Saviors' Cradle Sword Coast | Meridia              | True  | True
+    # Richard Nixon         | 8 | Real World                  | Washington D.C.      | True  | True
+    # Evelyn                | 9 | Saviors' Cradle Sword Coast | Null                 | True  | False
+
+    link_npcs_and_cities = """
+        INSERT INTO city_npc_linker(city_id, npc_id) VALUES
+            (3, 1),
+            (2, 3),
+            (5, 4),
+            (7, 4),
+            (6, 5),
+            (5, 7),
+            (8, 8)
         """
-    cur.execute(add_specials_non_hidden)
+    cur.execute(link_npcs_and_cities)
+    conn.commit()
+
+    #    cities and their ids, worlds, associated city(s), associated user(s), hidden status, and reveal status
+
+    # Jamestown Key to the City | 1 | Real World                  | Jamestown(4)    | NULL                       | False | True
+    # Soul Phylactery           | 2 | Out of Touch                | NULL            | NULL                       | False | True
+    # The Vines                 | 3 | Dralbrar                    | Charlote        | Margarette Chesteroot(1)   | False | False
+    # Ring of Gander            | 4 | Saviors' Cradle Sword Coast | Meridia(5)      | NULL                       | True  | False
+    # The Golden Candle         | 5 | Saviors' Cradle Sword Coast | NULL            | Oliver Quinn(7), Evelyn(9) | True  | False
+
+    add_specials_non_hidden_revealed = """
+        INSERT INTO specials(name, description, world_id, revealed, revealed_date) VALUES
+            ('Jamestown Key to the City', 'A city to the city of Jamestown, NY', 6, 't', '1934-12-20 16:15:00'),
+            ('Soul Phylactery', 'A large crystal with the souls of countless tortured individuals trapped within',
+                5, 't', '2021-06-19 15:12:22')
+        """
+    cur.execute(add_specials_non_hidden_revealed)
+    conn.commit()
+
+    add_specials_non_hidden_non_revealed = """
+        INSERT INTO specials(name, description, world_id) VALUES
+            ('The Vines', 'The vines of the town come from a small bush in the village center. These vines have been 
+                there for hundreds of years and seem to keep the buildings in good condition, preventing them from 
+                needing maintenance. The only building that the roots seem to avoid is the town hall, going around its 
+                base and moving out past it. The roots follow the irrigated ditches along the road and to the fields 
+                and seem to turn the water from the ocean into pure water and add natural fertilizers to it, allowing 
+                the crops to grow larger and stronger than normal. These roots were a gift to the town by Atandia for 
+                their constant tranquility and provide those who consume the plants aided by its fertilizers with health, 
+                and keeping them looking young. They still age however, but there is no physical evidence of it.',
+            1)
+        """
+    cur.execute(add_specials_non_hidden_non_revealed)
     conn.commit()
 
     add_specials_hidden = """
@@ -174,6 +290,24 @@ def load_data():
                 him if ever extinguished. The kobolds protected it from ever happening, they never worshiped it.', 3)
         """
     cur.execute(add_specials_hidden)
+    conn.commit()
+
+    link_specials_and_npcs = """
+        INSERT INTO npc_special_linker(npc_id, special_id) VALUES
+            (1, 3),
+            (7, 5),
+            (9, 5)
+        """
+    cur.execute(link_specials_and_npcs)
+    conn.commit()
+
+    link_specials_and_cities = """
+        INSERT INTO city_special_linker(city_id, special_id) VALUES
+            (4, 1),
+            (3, 3),
+            (5, 4)
+        """
+    cur.execute(link_specials_and_cities)
     conn.commit()
 
     add_comments = """

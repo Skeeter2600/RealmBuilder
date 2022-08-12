@@ -18,7 +18,7 @@ def rebuild_specials_table():
             hidden_description  TEXT DEFAULT NULL,
             revealed            BOOLEAN NOT NULL DEFAULT 'f',
             revealed_date       TIMESTAMP,
-            world_id            INTEGER NOT NULL REFERENCES worlds
+            world_id            INTEGER NOT NULL REFERENCES worlds ON DELETE CASCADE
         )
         """
     cur.execute(drop_sql)

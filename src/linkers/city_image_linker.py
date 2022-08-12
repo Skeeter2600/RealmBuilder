@@ -13,7 +13,7 @@ def rebuild_city_image_linker():
     create_sql = """
         CREATE TABLE city_image_linker(
             id              SERIAL PRIMARY KEY,
-            city_id         INTEGER NOT NULL REFERENCES citys,
+            city_id         INTEGER NOT NULL REFERENCES citys ON DELETE CASCADE,
             image           bytea NOT NULL
         )
         """

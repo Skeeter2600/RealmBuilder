@@ -118,3 +118,7 @@ def check_session_key(user_id, session_key):
     cur.execute(request, [user_id])
     outcome = cur.fetchall()[0][0]
     return outcome == session_key
+
+
+# Below here are the get functions that get various elements about a user
+# Such as their data

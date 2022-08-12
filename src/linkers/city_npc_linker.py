@@ -13,8 +13,8 @@ def rebuild_city_npc_linker():
     create_sql = """
         CREATE TABLE city_npc_linker(
             id              SERIAL PRIMARY KEY,
-            city_id         INTEGER NOT NULL REFERENCES citys,
-            npc_id          INTEGER NOT NULL REFERENCES npcs
+            city_id         INTEGER NOT NULL REFERENCES citys ON DELETE CASCADE,
+            npc_id          INTEGER NOT NULL REFERENCES npcs ON DELETE CASCADE
         )
         """
     cur.execute(drop_sql)

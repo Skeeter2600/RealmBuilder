@@ -13,7 +13,7 @@ def rebuild_admins_table():
     create_sql = """
         CREATE TABLE admins(
             id              SERIAL PRIMARY KEY,
-            world_id        INTEGER NOT NULL REFERENCES worlds,
+            world_id        INTEGER NOT NULL REFERENCES worlds ON DELETE CASCADE,
             user_id         INTEGER NOT NULL REFERENCES users
         )
         """

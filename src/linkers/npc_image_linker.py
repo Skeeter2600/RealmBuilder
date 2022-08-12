@@ -13,7 +13,7 @@ def rebuild_npc_image_linker():
     create_sql = """
         CREATE TABLE npc_image_linker(
             id              SERIAL PRIMARY KEY,
-            npc_id          INTEGER NOT NULL REFERENCES npcs,
+            npc_id          INTEGER NOT NULL REFERENCES npcs ON DELETE CASCADE,
             image           bytea NOT NULL
         )
         """

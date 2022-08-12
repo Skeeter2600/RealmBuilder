@@ -44,3 +44,38 @@ def get_component_comments(comp_id, comp_type):
         WHERE %s.component_id = %s
         """
 
+    cur.execute(request, (comp_type, comp_type, comp_type, comp_id))
+    outcome = cur.fetchall()
+    conn.close()
+
+    return outcome
+
+
+def get_user_comments(user_id, limit, page):
+    """
+    This function will get the comments made by a
+    user with a page limit and selection
+
+    :param user_id: the id of the user being checked
+    :param limit: the amount of comments to return
+        (if none, default 25)
+    :param page: the offset of the comment page
+    """
+
+    conn = connect()
+    cur = conn.cursor()
+
+    if limit is None:
+        limit = 25
+
+    request = """
+        SELECT * FROM comments
+        WHERE user_id = %
+        LIMIT %s OFFSET %s
+        """
+    cur.execute(request, (user_id, limit, (page - 1) * limit))
+    outcome = cur.fetchall()
+
+    conn.close()
+
+    return outcome

@@ -2,7 +2,6 @@ import unittest
 
 from src.components.citys import *
 from src.components.users import login_user
-from src.utils.db_utils import connect
 from src.utils.table_manager import rebuild_tables
 from tests.test_builders.test_build import load_data
 

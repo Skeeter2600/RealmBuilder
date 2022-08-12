@@ -13,8 +13,8 @@ def rebuild_npc_special_linker():
     create_sql = """
         CREATE TABLE npc_special_linker(
             id              SERIAL PRIMARY KEY,
-            npc_id         INTEGER NOT NULL REFERENCES npcs,
-            special_id     INTEGER NOT NULL REFERENCES specials
+            npc_id         INTEGER NOT NULL REFERENCES npcs ON DELETE CASCADE,
+            special_id     INTEGER NOT NULL REFERENCES specials ON DELETE CASCADE
         )
         """
     cur.execute(drop_sql)

@@ -21,7 +21,7 @@ def rebuild_citys_table():
             description     TEXT NOT NULL,
             revealed        BOOLEAN NOT NULL DEFAULT 'f',
             revealed_date   TIMESTAMP DEFAULT NULL,
-            world_id        INTEGER NOT NULL REFERENCES worlds
+            world_id        INTEGER NOT NULL REFERENCES worlds ON DELETE CASCADE
         )
         """
     cur.execute(drop_sql)

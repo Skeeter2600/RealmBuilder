@@ -41,13 +41,13 @@ def load_data():
     conn.commit()
 
     add_worlds = """
-        INSERT INTO worlds(name, owner_id) VALUES
-            ('Dralbrar', 1),
-            ('Saltmarsh', 3),
-            ('Saviors'' Cradle Sword Coast', 1),
-            ('Three Lords Sword Coast', 3),
-            ('Out of Touch', 5),
-            ('Real World', 2)
+        INSERT INTO worlds(name, owner_id, description) VALUES
+            ('Dralbrar', 1, 'A continent forgotten to some'),
+            ('Saltmarsh', 3, 'A land of pirates, mystery, and more'),
+            ('Saviors'' Cradle Sword Coast', 1, 'Let''s go way back'),
+            ('Three Lords Sword Coast', 3, 'Let''s go not as far back'),
+            ('Out of Touch', 5, 'A world of intrigue and questions'),
+            ('Real World', 2, 'Meh')
         """
     cur.execute(add_worlds)
     conn.commit()

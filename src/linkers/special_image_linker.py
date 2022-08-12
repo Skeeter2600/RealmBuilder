@@ -13,7 +13,7 @@ def rebuild_special_image_linker():
     create_sql = """
         CREATE TABLE special_image_linker(
             id              SERIAL PRIMARY KEY,
-            special_id      INTEGER NOT NULL REFERENCES specials,
+            special_id      INTEGER NOT NULL REFERENCES specials ON DELETE CASCADE,
             image           bytea NOT NULL
         )
         """

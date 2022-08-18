@@ -122,3 +122,12 @@ def check_session_key(user_id, session_key):
 
 # Below here are the get functions that get various elements about a user
 # Such as their data
+
+def get_new_components(user_id, session_key, world_id):
+    """
+    This function will get a list of components that have
+    been revealed since their last log in
+    :param user_id: this is the user that is checking
+    :param session_key: the user's session key
+    :param world_id: the id of the world being checked
+    """

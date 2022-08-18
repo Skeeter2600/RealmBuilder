@@ -41,15 +41,57 @@ def load_data():
     conn.commit()
 
     add_worlds = """
-        INSERT INTO worlds(name, owner_id, description) VALUES
-            ('Dralbrar', 1, 'A continent forgotten to some'),
-            ('Saltmarsh', 3, 'A land of pirates, mystery, and more'),
-            ('Saviors'' Cradle Sword Coast', 1, 'Let''s go way back'),
-            ('Three Lords Sword Coast', 3, 'Let''s go not as far back'),
-            ('Out of Touch', 5, 'A world of intrigue and questions'),
-            ('Real World', 2, 'Meh')
+        INSERT INTO worlds(name, owner_id, description, public) VALUES
+            ('Dralbrar', 1, 'A continent forgotten to some', 'f'),
+            ('Saltmarsh', 3, 'A land of pirates, mystery, and more', 't'),
+            ('Saviors'' Cradle Sword Coast', 1, 'Let''s go way back', 't'),
+            ('Three Lords Sword Coast', 3, 'Let''s go not as far back', 't'),
+            ('Out of Touch', 5, 'A world of intrigue and questions', 'f'),
+            ('Real World', 2, 'Meh', 't')
         """
     cur.execute(add_worlds)
+    conn.commit()
+
+    #     The users in each world
+
+    #    Dralbrar                    | Beck
+    #    Saltmarsh                   | Beck, RyanR, RyanC, Charles, Nolan
+    #    Saviors' Cradle Sword Coast | Beck, RyanR, RyanC, Charles, Nolan, Taylor
+    #    Three Lords Sword Coast     | Beck, RyanR, RyanC, Charles, Nolan
+    #    Out of Touch                | RyanC, Charles, Nolan
+    #    Real World                  | Beck, RyanR, RyanC, Charles, Nolan, Taylor, Josh, Jacob
+
+    link_users_worlds = """
+        INSERT INTO world_user_linker(world_id, user_id, last_checked) VALUES
+        (1, 1, CURRENT_TIMESTAMP),
+        (2, 1, CURRENT_TIMESTAMP),
+        (2, 2, '2022-06-14 11:12:13'),
+        (2, 3, '2022-06-14 14:15:16'),
+        (2, 4, '2022-06-14 17:18:19'),
+        (2, 5, '2022-06-14 20:21:22'),
+        (3, 1, '2019-11-17 19:18:17'),
+        (3, 2, '2019-11-17 16:15:14'),
+        (3, 3, '2019-11-17 13:12:11'),
+        (3, 4, '2019-11-17 10:09:08'),
+        (3, 5, '2019-11-17 07:06:05'),
+        (3, 6, '2019-11-17 04:03:02'),
+        (4, 2, '2018-06-14 11:12:13'),
+        (4, 3, '2018-06-14 14:15:16'),
+        (4, 4, '2018-06-14 17:18:19'),
+        (4, 5, '2018-06-14 20:21:22'),
+        (5, 3, '2021-04-12 13:22:45'),
+        (5, 4, '2021-04-13 19:11:15'),
+        (6, 1, CURRENT_TIMESTAMP),
+        (6, 2, CURRENT_TIMESTAMP),
+        (6, 3, CURRENT_TIMESTAMP),
+        (6, 4, CURRENT_TIMESTAMP),
+        (6, 5, CURRENT_TIMESTAMP),
+        (6, 6, CURRENT_TIMESTAMP),
+        (6, 7, CURRENT_TIMESTAMP),
+        (6, 8, CURRENT_TIMESTAMP)
+    """
+
+    cur.execute(link_users_worlds)
     conn.commit()
 
     #    cities and their ids, worlds, and reveal status

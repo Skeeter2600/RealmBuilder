@@ -11,6 +11,7 @@ from src.linkers.city_special_linker import rebuild_city_special_linker
 from src.linkers.npc_image_linker import rebuild_npc_image_linker
 from src.linkers.npc_special_linker import rebuild_npc_special_linker
 from src.linkers.special_image_linker import rebuild_special_image_linker
+from src.linkers.world_user_linker import rebuild_world_user_linker
 
 
 def rebuild_tables():
@@ -27,3 +28,4 @@ def rebuild_tables():
     rebuild_npc_image_linker()
     rebuild_npc_special_linker()
     rebuild_special_image_linker()
+    rebuild_world_user_linker()

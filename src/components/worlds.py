@@ -16,7 +16,8 @@ def rebuild_worlds_table():
             id              SERIAL PRIMARY KEY,
             name            TEXT NOT NULL,
             description     TEXT,
-            owner_id        INTEGER NOT NULL REFERENCES users
+            owner_id        INTEGER NOT NULL REFERENCES users,
+            public          BOOLEAN NOT NULL DEFAULT 'f'
         )
         """
     cur.execute(drop_sql)

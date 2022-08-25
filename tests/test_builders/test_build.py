@@ -131,7 +131,7 @@ def load_data():
 
     add_citys_revealed = """
         INSERT INTO citys(name, population, song, trades, aesthetic, description, world_id, 
-            revealed, revealed_date) VALUES
+            revealed, edit_date) VALUES
             ('Jamestown', 28712, 'https://www.youtube.com/watch?v=5KiAWfu7cu8', 'Furniture',
                 'Small City Vibes', 
                     'Jamestown is a city in southern Chautauqua County, New York, United States. 
@@ -213,7 +213,7 @@ def load_data():
     conn.commit()
 
     add_npcs_non_hidden_revealed = """
-        INSERT INTO npcs(name, age, occupation, description, world_id, revealed, revealed_date) VALUES
+        INSERT INTO npcs(name, age, occupation, description, world_id, revealed, edit_date) VALUES
             ('Riam Chesteroot', 27, 'Captain',
                 'Riam Chesteroot is a 5’8” tall human weighing in at around 130 lbs. He has long, messy, black hair, 
                     which is often pushed down and over his left ear. He has a slim face with a small nose and prominent
@@ -237,7 +237,7 @@ def load_data():
 
     add_npcs_hidden_revealed = """
         INSERT INTO npcs(name, age, occupation, description, hidden_description, world_id, 
-            revealed, revealed_date) VALUES
+            revealed, edit_date) VALUES
             ('Oliver Quinn', 39, 'Trader', 
                 'Oliver Quinn is a man standing 5''11" with dirty blonde hair. He is married
                 to Susie Quinn and had a son, Robby, who was tragically lost to travelling adventurers', 
@@ -298,7 +298,7 @@ def load_data():
     # The Golden Candle         | 5 | Saviors' Cradle Sword Coast | NULL            | Oliver Quinn(7), Evelyn(9) | True  | False
 
     add_specials_non_hidden_revealed = """
-        INSERT INTO specials(name, description, world_id, revealed, revealed_date) VALUES
+        INSERT INTO specials(name, description, world_id, revealed, edit_date) VALUES
             ('Jamestown Key to the City', 'A city to the city of Jamestown, NY', 6, 't', '1934-12-20 16:15:00'),
             ('Soul Phylactery', 'A large crystal with the souls of countless tortured individuals trapped within',
                 5, 't', '2021-06-19 15:12:22')

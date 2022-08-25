@@ -20,7 +20,7 @@ def rebuild_citys_table():
             aesthetic       TEXT,
             description     TEXT NOT NULL,
             revealed        BOOLEAN NOT NULL DEFAULT 'f',
-            revealed_date   TIMESTAMP DEFAULT NULL,
+            edit_date       TIMESTAMP DEFAULT NULL,
             world_id        INTEGER NOT NULL REFERENCES worlds ON DELETE CASCADE
         )
         """

@@ -19,7 +19,7 @@ def rebuild_npcs_table():
             description         TEXT NOT NULL,
             hidden_description  TEXT DEFAULT NULL,
             revealed            BOOLEAN NOT NULL DEFAULT 'f',
-            revealed_date       TIMESTAMP,
+            edit_date           TIMESTAMP DEFAULT NULL,
             world_id            INTEGER NOT NULL REFERENCES worlds ON DELETE CASCADE
         )
         """

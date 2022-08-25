@@ -18,8 +18,9 @@ def rebuild_users_table():
             id              SERIAL PRIMARY KEY,
             username        TEXT NOT NULL,
             password        TEXT NOT NULL,
-            session_key     TEXT,
-            email           TEXT NOT NULL
+            profile_pic     bytea DEFAULT NULL,
+            email           TEXT NOT NULL,
+            session_key     TEXT
         )
         """
     cur.execute(drop_sql)

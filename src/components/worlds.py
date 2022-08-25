@@ -1,3 +1,4 @@
+from src.components.comments import get_component_comments
 from src.components.users import check_session_key
 from src.utils.db_utils import connect
 
@@ -26,30 +27,23 @@ def rebuild_worlds_table():
     conn.close()
 
 
-def add_world(name, description, owner_id):
+def add_world(name, owner_id):
     """
     This function will add a world to the database
     :param name: The name of the world
-    :param description: The world's description
     :param owner_id: the id of the user who made the world
+
+    :return: the id of the new world
     """
     conn = connect()
     cur = conn.cursor()
 
-    if description != '':
-
-        request = """
-            INSERT INTO worlds(name, descripton, owner_id) VALUE
-            (%s, %s, %s)
-            """
-        cur.execute(request, (name, description, owner_id))
-
-    else:
-        request = """
-                    INSERT INTO worlds(name, owner_id) VALUE
-                    (%s, %s)
-                    """
-        cur.execute(request, (name, owner_id))
+    request = """
+                INSERT INTO worlds(name, owner_id) VALUES
+                (%s, %s)
+                RETURNING id
+                """
+    cur.execute(request, (name, owner_id))
 
     conn.commit()
     conn.close()
@@ -62,6 +56,8 @@ def delete_world(world_id, owner_id, session_key):
     :param world_id: the id of the world to delete
     :param owner_id: the id of the owner of the world
     :param session_key: the supposed session key of the user
+
+    :return: True if successful, False if not
     """
 
     if check_session_key(owner_id, session_key):
@@ -70,32 +66,319 @@ def delete_world(world_id, owner_id, session_key):
 
         delete_request = """
             DELETE FROM worlds
-            WHERE world_id = %
+            WHERE id = %s
+            RETURNING *
             """
         cur.execute(delete_request, [world_id])
+        outcome = cur.fetchall()
 
         conn.commit()
         conn.close()
 
+        # if the delete was successful
+        if len(outcome) > 0:
+            return True
+    return False
 
-def get_world_details(world_id):
+
+def edit_world(world_id, user_id, session_key, elements):
     """
-    This function will get the description of the
-    selected world
-    :param world_id: the id of the wanted world
+    This function will edit the elements of a world
+    :param world_id: the id of the world
+    :param user_id: the id of the user requesting the edit
+    :param session_key: the session key of the user
+    :param elements: the elements being changed in json
+
+    :format elements:
+            { name: the world name,
+              description: the world description,
+              public: True or False
+            }
+
+    :return: True if edited, False if not
+    """
+    if check_editable(world_id, user_id, session_key):
+        conn = connect()
+        cur = conn.cursor()
+
+        update_request = """
+            UPDATE worlds
+            SET name = %s, description = %s, public = %s
+            WHERE id = %s
+            """
+        cur.execute(update_request, (elements['name'], elements['description'], elements['public'], world_id))
+        conn.commit()
+
+        conn.close()
+        return True
+    return False
+
+
+def join_world(world_id, user_id, session_key):
+    """
+    This function will allow a user to join a world
+
+    :param world_id: the id of the world
+    :param user_id: the id of the user
+    :param session_key: the session_key of the user
+
+    :return: True if successful, False if not
     """
     conn = connect()
     cur = conn.cursor()
 
-    request = """
-        SELECT name, description, username FROM worlds
-            INNER JOIN users ON worlds.owner_id = users.id
-        WHERE worlds.id = %s
-        """
+    if check_session_key(user_id, session_key):
+        world_check_query = """
+            SELECT EXISTS(
+                SELECT 1 FROM worlds
+                WHERE id = %s
+            )
+            """
+        cur.execute(world_check_query)
+        outcome = cur.fetchall()
 
-    cur.execute(request, [world_id])
+        if outcome:
+            add_query = """
+                INSERT INTO world_user_linker(world_id, user_id) VALUES 
+                (%s, %s)
+                """
+            cur.execute(add_query, (world_id, user_id))
+            return True
+    return False
+
+
+def get_owner(world_id):
+    """
+    This will get the info on the owner of the world
+
+    :param world_id: the id of the world being checked
+
+    :return: the info on the owner
+    :format return:
+            [{  id:   user id,
+                name: user's name,
+                profile_picture: user's profile picture
+            }]
+    """
+    conn = connect()
+    cur = conn.cursor()
+    owner_request = """
+                SELECT users.id, users.name, users.profile_pic FROM worlds
+                    INNER JOIN users ON users.id = worlds.owner_id = users.id
+                WHERE worlds.id = %s
+                """
+    cur.execute(owner_request, [world_id])
     outcome = cur.fetchall()
+
+
+def get_world_user_list(world_id):
+    """
+    This function will get a list of all users who
+    are a part of a world
+    :param world_id: the id of the world being checked
+
+    :return: a list of the users in a world
+
+    :format return:
+            [{  id:   user id,
+                name: user's name,
+                profile_picture: user's profile picture
+            }]
+    """
+    conn = connect()
+    cur = conn.cursor()
+
+    user_list = []
+
+    # add the owner to the list
+    owner_request = """
+            SELECT users.id, users.name, users.profile_pic FROM worlds
+                INNER JOIN users ON users.id = worlds.owner_id = users.id
+            WHERE worlds.id = %s
+            """
+    cur.execute(owner_request, [world_id])
+    outcome = cur.fetchall()
+    user_list.append(outcome[0])
+
+    # add the admins to the list
+    admin_request = """
+            SELECT users.id, users.name, users.profile_pic FROM admins
+                INNER JOIN users ON users.id = admins.user_id = users.id
+            WHERE world_id = %s
+            """
+    cur.execute(admin_request, [world_id])
+    outcome = cur.fetchall()
+    for admin in outcome:
+        user_list.append(admin)
+
+    # add the members to the list
+    member_request = """
+        SELECT users.id, users.name, users.profile_pic FROM world_user_linker
+            INNER JOIN users ON users.id = world_user_linker.user_id = users.id
+        WHERE world_id = %s
+        """
+    cur.execute(member_request, [world_id])
+    outcome = cur.fetchall()
+    for user in outcome:
+        user_list.append(user)
+
     conn.close()
+    return user_list
 
-    return outcome
 
+def check_viewable(world_id, user_id):
+    """
+    This function will see if a user can view the
+        information for a world
+    :param world_id: the id of the world being checked
+    :param user_id: the id of the user checking
+
+    :return: True if viewable, False if not
+    """
+    conn = connect()
+    cur = conn.cursor()
+
+    world_info_request = """
+        SELECT owner_id, public FROM worlds
+        WHERE id = %s
+        """
+    values = cur.execute(world_info_request, [world_id])
+    owner_id = values[0][0]
+    public = values[0][1]
+    # if user not the owner or the world is private
+    if owner_id != user_id or not public:
+
+        user_request = """
+                    SELECT EXISTS(
+                            SELECT 1 FROM world_user_linker
+                            WHERE user_id = %s AND world_id = %s
+                        )
+                    """
+        cur.execute(user_request, (user_id, world_id))
+        # if user is not in the list of users
+        if not cur.fetchall():
+            admin_request = """
+                            SELECT EXISTS(
+                                SELECT 1 FROM admins
+                                WHERE user_id = %s AND world_id = %s
+                            )
+                            """
+            cur.execute(admin_request, (user_id, world_id))
+            outcome = cur.fetchall()
+            conn.close()
+            # if user is an admin
+            return outcome
+        conn.close()
+        return True
+    # user is owner
+    conn.close()
+    return True
+
+
+def check_editable(world_id, user_id, session_key):
+    """
+    This function will check if a user can edit a world
+        i.e. they are an admin or owner
+    :param world_id: the id of the world being checked
+    :param user_id: the id of the user being checked
+    :param session_key: the session key of the user being checked
+
+    :return: true if editable, false if not
+    """
+    conn = connect()
+    cur = conn.cursor()
+    if check_session_key(user_id, session_key):
+        owner_request = """
+            SELECT EXISTS(
+                SELECT 1 FROM worlds
+                WHERE owner_id = %s AND id = %s
+            )
+            """
+        cur.execute(owner_request, (user_id, world_id))
+        # if user not the owner
+        if not cur.fetchall():
+            admin_request = """
+                SELECT EXISTS(
+                    SELECT 1 FROM admins
+                    WHERE user_id = %s AND world_id = %s
+                )
+                """
+            cur.execute(admin_request, (user_id, world_id))
+            # if user is admin
+            outcome = cur.fetchall()
+            conn.close()
+            return outcome
+        # user is owner
+        conn.close()
+        return True
+
+    conn.close()
+    return False
+
+
+def get_world_details(world_id, user_id, session_key):
+    """
+    This function will get the information about a world
+    based on if they are an owner, admin, or if they are
+    able to access it
+    :param world_id: the id of the world being accessed
+    :param user_id: the id of the user requesting it
+    :param session_key: the session key of the user requesting
+        the information
+    :return: The information in json format if good
+             {valid: False} if not good
+
+    :format return:
+            { valid: able to view details,
+              name: world name,
+              description: world description,
+              new_npcs:     [{ id: npc id,
+                               name: npc name}],
+              new_cities:   [{ id: city id,
+                               name: city name}],
+              new_specials: [{ id: special id,
+                               name: special name}],
+              comments:     [{ user: { user_id: user's id,
+                                       user_name: user's name,
+                                       profile_picture: user's profile picture},
+                              comment: the comment,
+                              time: the time stamp of the comment
+                              likes: int of likes,
+                              dislikes: int of dislikes
+                            }]
+              user_list:    [{ id: user id,
+                               name: user's name,
+                               profile_picture: user's profile picture}]
+            }
+    """
+    if check_session_key(user_id, session_key):
+        if check_viewable(world_id, user_id):
+            conn = connect()
+            cur = conn.cursor()
+            world_info = {
+                'valid': True,
+                'name': '',
+                'description': '',
+                'new_npcs': [],
+                'new_cities': [],
+                'new_specials': [],
+                'comments': [],
+                'user_list': []
+            }
+            world_info_request = """
+                SELECT name, description FROM worlds
+                WHERE id = %s
+                """
+            cur.execute(world_info_request, [world_id])
+            outcome = cur.fetchall()
+            world_info['name'] = outcome[0][0]
+            world_info['description'] = outcome[0][1]
+            # TODO: Add the functionality for the new components
+            world_info['new_npcs'] = {}
+            world_info['new_cities'] = {}
+            world_info['new_specials'] = {}
+            world_info['comments'] = get_component_comments(world_id, 'worlds')
+            world_info['user_list'] = get_world_user_list(world_id)
+
+    else:
+        return {'valid': False}

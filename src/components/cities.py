@@ -1,17 +1,17 @@
 from src.utils.db_utils import connect
 
 
-def rebuild_citys_table():
+def rebuild_cities_table():
     """
-    This function will empty the citys table
+    This function will empty the cities table
     """
     conn = connect()
     cur = conn.cursor()
     drop_sql = """
-        DROP TABLE if EXISTS citys CASCADE;
+        DROP TABLE if EXISTS cities CASCADE;
         """
     create_sql = """
-        CREATE TABLE citys(
+        CREATE TABLE cities(
             id              SERIAL PRIMARY KEY,
             name            TEXT NOT NULL,
             population      INTEGER NOT NULL,
@@ -62,15 +62,15 @@ def get_city(user_id, session_key, city_id, admin):
 
         if admin:
             request = """
-            SELECT * FROM citys
-            WHERE citys.id = %s
+            SELECT * FROM cities
+            WHERE cities.id = %s
             """
             cur.execute(request, [city_id])
 
         else:
             request = """
-                SELECT * FROM citys
-                WHERE citys.id = %s AND citys.revealed = 't'
+                SELECT * FROM cities
+                WHERE cities.id = %s AND cities.revealed = 't'
             """
             cur.execute(request, [city_id])
 
@@ -80,7 +80,7 @@ def get_city(user_id, session_key, city_id, admin):
         return outcome
 
 
-def get_cities(world, admin,  limit, page):
+def get_cities(world, admin, limit, page):
     """
     This function will get all the cities in a world
     within a limit
@@ -102,16 +102,16 @@ def get_cities(world, admin,  limit, page):
 
     if admin:
         request = """
-        SELECT name, population, revealed FROM citys
-        WHERE citys.world_id = %s
+        SELECT name, population, revealed FROM cities
+        WHERE cities.world_id = %s
         LIMIT %s OFFSET %s
         """
         cur.execute(request, (world, limit, (page - 1) * limit))
 
     else:
         request = """
-            SELECT name, population FROM citys
-            WHERE citys.world_id = %s AND citys.revealed = 't'
+            SELECT name, population FROM cities
+            WHERE cities.world_id = %s AND cities.revealed = 't'
             LIMIT %s OFFSET %s
         """
         cur.execute(request, (world, limit, (page - 1) * limit))
@@ -153,18 +153,18 @@ def search_for_city(param, world, admin, limit, page):
 
     if admin:
         request = """
-        SELECT name, population, revealed FROM citys
+        SELECT name, population, revealed FROM cities
         WHERE to_tsvector('english', name) @@ to_tsquery('english', %s) AND
-            citys.world_id = %s
+            cities.world_id = %s
         LIMIT %s OFFSET %s
         """
         cur.execute(request, (content_search, world, limit, (page - 1) * limit))
 
     else:
         request = """
-            SELECT name, population FROM citys
+            SELECT name, population FROM cities
             WHERE to_tsvector('english', name) @@ to_tsquery('english', %s) AND 
-                citys.world_id = %s AND citys.revealed = 't'
+                cities.world_id = %s AND cities.revealed = 't'
             LIMIT %s OFFSET %s
         """
         cur.execute(request, (content_search, world, limit, (page - 1) * limit))
@@ -181,28 +181,101 @@ def get_npcs_in_city(city_id, admin):
     NPCs in a city
     :param city_id: the id of the city to be looked at
     :param admin: if it should show hidden npcs
+
     :return: the list of viewable NPCs
+
+    :format return: [{ id: npc id,
+                       name: npc name,
+                       revealed: reveal status (if admin)}]
     """
     conn = connect()
     cur = conn.cursor()
 
+    npc_list = []
+
     if admin:
         request = """
-            SELECT name, occupation, revealed FROM city_npc_linker
+            SELECT npc.id, name, revealed FROM city_npc_linker
                 INNER JOIN npcs AS npc ON city_npc_linker.npc_id = npc.id
             WHERE city_npc_linker.city_id = %s
             """
         cur.execute(request, [city_id])
+        outcome = cur.fetchall()
+
+        for special in outcome:
+            npc_list.append(
+                {'id': special[0],
+                 'name': special[1],
+                 'revealed': special[2]
+                 })
 
     else:
         request = """
-            SELECT name, occupation FROM city_npc_linker
+            SELECT npc.id, name FROM city_npc_linker
                 INNER JOIN npcs AS npc ON city_npc_linker.npc_id = npc.id
             WHERE city_npc_linker.city_id = %s AND npc.revealed = 't'
             """
         cur.execute(request, [city_id])
+        outcome = cur.fetchall()
 
-    outcome = cur.fetchall()
+        for special in outcome:
+            npc_list.append(
+                {'id': special[0],
+                 'name': special[1]
+                 })
+
     conn.close()
+    return npc_list
 
-    return outcome
+
+def get_specials_in_city(city_id, admin):
+    """
+    This function will return the basic information for
+    specials in a city
+    :param city_id: the id of the city to be looked at
+    :param admin: if it should show hidden npcs
+
+    :return: the list of viewable specials
+
+    :format return: [{ id: special id,
+                       name: special name,
+                       revealed: reveal status (if admin)}]
+    """
+    conn = connect()
+    cur = conn.cursor()
+
+    special_list = []
+
+    if admin:
+        request = """
+            SELECT special.id, name, revealed FROM city_special_linker
+                INNER JOIN specials AS special ON city_special_linker.special_id = special.id
+            WHERE city_special_linker.city_id = %s
+            """
+        cur.execute(request, [city_id])
+        outcome = cur.fetchall()
+
+        for special in outcome:
+            special_list.append(
+                {'id': special[0],
+                 'name': special[1],
+                 'revealed': special[2]
+                 })
+
+    else:
+        request = """
+            SELECT special.id, name FROM city_special_linker
+                INNER JOIN specials AS special ON city_special_linker.special_id = special.id
+            WHERE city_special_linker.city_id = %s AND special.revealed = 't'
+            """
+        cur.execute(request, [city_id])
+        outcome = cur.fetchall()
+
+        for special in outcome:
+            special_list.append(
+                {'id': special[0],
+                 'name': special[1]
+                 })
+
+    conn.close()
+    return special_list

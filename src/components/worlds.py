@@ -1,5 +1,6 @@
 from src.components.comments import get_component_comments
-from src.components.users import check_session_key
+from src.linkers.world_user_linker import get_new_elements
+from src.utils.db_tools import check_session_key
 from src.utils.db_utils import connect
 
 
@@ -371,14 +372,29 @@ def get_world_details(world_id, user_id, session_key):
                 """
             cur.execute(world_info_request, [world_id])
             outcome = cur.fetchall()
+
+            conn.close()
+
             world_info['name'] = outcome[0][0]
             world_info['description'] = outcome[0][1]
-            # TODO: Add the functionality for the new components
-            world_info['new_npcs'] = {}
-            world_info['new_cities'] = {}
-            world_info['new_specials'] = {}
+
+            new_info = get_new_elements(world_id, user_id, session_key)
+            world_info['new_npcs'] = new_info['npcs']
+            world_info['new_cities'] = new_info['cities']
+            world_info['new_specials'] = new_info['specials']
+
             world_info['comments'] = get_component_comments(world_id, 'worlds')
             world_info['user_list'] = get_world_user_list(world_id)
 
+            return world_info
+
     else:
-        return {'valid': False}
+        return {'valid': False,
+                'name': '',
+                'description': '',
+                'new_npcs': [],
+                'new_cities': [],
+                'new_specials': [],
+                'comments': [],
+                'user_list': []
+                }

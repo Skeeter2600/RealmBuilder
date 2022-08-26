@@ -7,7 +7,7 @@ def load_data():
     cur = conn.cursor()
     rebuild_tables()
 
-    # passwords & session key for users
+    # passwords for users
     # Beck:    RiamChesteroot26
     # RyanR:   PabloWeegee69
     # RyanC:   ThuaccTwumps
@@ -105,8 +105,8 @@ def load_data():
     # Greenest        | 7 | Saviors' Cradle Sword Coast | True
     # Washington D.C. | 8 | Real World                  | True
 
-    add_citys_unrevealed = """
-        INSERT INTO citys(name, population, song, trades, aesthetic, description, world_id) VALUES
+    add_cities_unrevealed = """
+        INSERT INTO cities(name, population, song, trades, aesthetic, description, world_id) VALUES
             ('New Meridia', 10392, 'https://www.youtube.com/watch?v=ojEyUU2M6z4', 'Farming, Storefronts',
                 'Small town vibes',
                     'New Meridia is a medium sized town in which many people flock for various reasons. Too many
@@ -126,11 +126,11 @@ def load_data():
                     ditches taking it to the fields.',
                 1)
         """
-    cur.execute(add_citys_unrevealed)
+    cur.execute(add_cities_unrevealed)
     conn.commit()
 
-    add_citys_revealed = """
-        INSERT INTO citys(name, population, song, trades, aesthetic, description, world_id, 
+    add_cities_revealed = """
+        INSERT INTO cities(name, population, song, trades, aesthetic, description, world_id, 
             revealed, edit_date) VALUES
             ('Jamestown', 28712, 'https://www.youtube.com/watch?v=5KiAWfu7cu8', 'Furniture',
                 'Small City Vibes', 
@@ -167,20 +167,21 @@ def load_data():
                         seeing over 20 million visitors in 2016.',
                     6, 't', '1790-07-16 12:00:00')
         """
-    cur.execute(add_citys_revealed)
+    cur.execute(add_cities_revealed)
     conn.commit()
 
-    #    npcs and their ids, worlds, location, hidden description status, and reveal status
+    #    npcs and their ids, worlds, location, hidden description status, reveal status, and related npcs (id)
 
-    # Margarette Chesteroot | 1 | Dralbrar                    | Charlote        | False | False
-    # Soni Paustel          | 2 | Out of Touch                | Null            | False | False
-    # Prometheus            | 3 | Three Lords Sword Coast     | Null            | False | False
-    # Prometheus            | 4 | Saviors' Cradle Sword Coast | Meridia         | False | False
-    # Riam Chesteroot       | 5 | Saltmarsh                   | Saltmarsh       | False | True
-    # Prometheus            | 6 | Out of Touch                | Null            | False | True
-    # Oliver Quinn          | 7 | Saviors' Cradle Sword Coast | Meridia         | True  | True
-    # Richard Nixon         | 8 | Real World                  | Washington D.C. | True  | True
-    # Evelyn                | 9 | Saviors' Cradle Sword Coast | Null            | True  | False
+    # Margarette Chesteroot | 1  | Dralbrar                    | Charlote        | False | False | None
+    # Soni Paustel          | 2  | Out of Touch                | Null            | False | False | 6
+    # Prometheus            | 3  | Three Lords Sword Coast     | Null            | False | False | None
+    # Prometheus            | 4  | Saviors' Cradle Sword Coast | Meridia         | False | False | 10, 7
+    # Riam Chesteroot       | 5  | Saltmarsh                   | Saltmarsh       | False | True  | None
+    # Prometheus            | 6  | Out of Touch                | Null            | False | True  | 2
+    # Thuacc                | 7  | Saviors' Cradle Sword Coast | Meridia         | True  | True  | 4, 10
+    # Oliver Quinn          | 8  | Saviors' Cradle Sword Coast | Meridia         | True  | True  | 10
+    # Richard Nixon         | 9  | Real World                  | Washington D.C. | True  | True  | None
+    # Evelyn                | 10 | Saviors' Cradle Sword Coast | Null            | True  | False | 4, 7, 8
 
     add_npcs_non_hidden_unrevealed = """
         INSERT INTO npcs(name, age, occupation, description, world_id) VALUES
@@ -238,6 +239,13 @@ def load_data():
     add_npcs_hidden_revealed = """
         INSERT INTO npcs(name, age, occupation, description, hidden_description, world_id, 
             revealed, edit_date) VALUES
+            ('Thuacc', 26, 'Adventurer',
+                'Thuacc is a half orc paladin with a need for adventure. He is short tempered and straight
+                to the point. What ever way will get to the goal is the right way and any one who stands in the way
+                is only another obstacle in the way of success.',
+                'Thuacc was born with the name Bonc and had a brother named Thuacc. In a battle for their home town,
+                Bonc took advantage of the situation and killed his brother, taking his name and leaving town.',
+                3, 't', '2020-01-18 19:19:19'),
             ('Oliver Quinn', 39, 'Trader', 
                 'Oliver Quinn is a man standing 5''11" with dirty blonde hair. He is married
                 to Susie Quinn and had a son, Robby, who was tragically lost to travelling adventurers', 
@@ -262,6 +270,17 @@ def load_data():
                 his life', 3)
         """
     cur.execute(add_npcs_hidden_unrevealed)
+    conn.commit()
+
+    link_npcs_and_npcs = """
+        INSERT INTO npc_npc_linker(npc_1_id, npc_2_id) VALUES
+            (2, 6),
+            (4, 7),
+            (4, 10),
+            (7, 10),
+            (8, 10)
+        """
+    cur.execute(link_npcs_and_npcs)
     conn.commit()
 
     #    npcs and their ids, worlds, location, hidden description status, and reveal status

@@ -1,6 +1,7 @@
 import hashlib
 import secrets
 
+from src.utils.db_tools import check_session_key
 from src.utils.db_utils import connect
 
 
@@ -94,41 +95,3 @@ def logout_user(user_id, session_key):
 
         return "signed out"
     return "bad request"
-
-
-def check_session_key(user_id, session_key):
-    """
-    This function will check if the user's session
-    key is valid
-
-    :param user_id: the id of the user
-    :param session_key: the session key they are checking
-
-    :return: true if valid, false if not
-    """
-    if not session_key or session_key == "":
-        return False
-
-    conn = connect()
-    cur = conn.cursor()
-
-    request = """
-        SELECT session_key FROM users
-        WHERE users.id = %s
-        """
-    cur.execute(request, [user_id])
-    outcome = cur.fetchall()[0][0]
-    return outcome == session_key
-
-
-# Below here are the get functions that get various elements about a user
-# Such as their data
-
-def get_new_components(user_id, session_key, world_id):
-    """
-    This function will get a list of components that have
-    been revealed since their last log in
-    :param user_id: this is the user that is checking
-    :param session_key: the user's session key
-    :param world_id: the id of the world being checked
-    """

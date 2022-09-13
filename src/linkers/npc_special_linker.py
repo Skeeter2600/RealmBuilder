@@ -27,17 +27,51 @@ def rebuild_npc_special_linker():
 def add_npc_special_association(npc_id, special_id, user_id, session_key):
     """
     This function will add an association between
-    a special and an npc to the linker table
+    a npc and an special to the linker table
 
+    :param special_id: the id of the special
     :param npc_id: the id of the npc
-    :param special_id: the id of the city
     :param user_id: the id of the user requesting this
     :param session_key: the user's session key
 
     :return: True if successful, False if not
     """
     if check_session_key(user_id, session_key):
-        # TODO add logic
+        conn = connect()
+        cur = conn.cursor()
+        insert_request = """
+            INSERT INTO npc_special_linker(npc_id, special_id) VALUES
+            (%s, %s)
+            """
+        cur.execute(insert_request, (npc_id, special_id))
+        conn.commit()
+        conn.close()
+        return True
+    return False
+
+
+def remove_npc_special_association(npc_id, special_id, user_id, session_key):
+    """
+    This function will remove an association between
+    a npc and a special from the linker table
+
+    :param special_id: the id of the special
+    :param npc_id: the id of the npc
+    :param user_id: the id of the user requesting this
+    :param session_key: the user's session key
+
+    :return: True if successful, False if not
+    """
+    if check_session_key(user_id, session_key):
+        conn = connect()
+        cur = conn.cursor()
+        delete_request = """
+            DELETE FROM npc_special_linker WHERE
+            npc_id = %s AND special_id = %s
+            """
+        cur.execute(delete_request, (npc_id, special_id))
+        conn.commit()
+        conn.close()
         return True
     return False
 
@@ -72,7 +106,7 @@ def get_npcs_by_special(special_id):
     """
     This function will get all of the NPCs associated
     with a special
-    :param special_id: the id of the city being checked
+    :param special_id: the id of the special being checked
 
     :return: a list of npcs
 

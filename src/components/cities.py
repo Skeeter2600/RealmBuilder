@@ -1,3 +1,8 @@
+from src.components.worlds import check_editable
+from src.linkers.city_image_linker import get_associated_city_images
+from src.linkers.city_npc_linker import get_npcs_by_city
+from src.linkers.city_special_linker import get_specials_by_city
+from src.utils.db_tools import check_session_key
 from src.utils.db_utils import connect
 
 
@@ -40,242 +45,218 @@ def get_city(user_id, session_key, city_id, admin):
     :param city_id: the id of the city
     :param admin: if the user is an admin or not
 
-    :return: the information about the city
+    :return: the city info in a json format
+
+    :format return: { name: city name,
+                      images: [images associated with npc],
+                      population: city population,
+                      song: city song,
+                      trades: city trades,
+                      aesthetic: city aesthetic
+                      description: city description,
+                      associated_npcs: [{id: npc id,
+                                         name: npc name}]
+                      associated_specials: [{id: special id,
+                                             name: special name}],
+                      admin_content: {
+                            revealed: T or F,
+                            edit_date: last time updated
+                      } (empty if not admin)
     """
-    conn = connect()
-    cur = conn.cursor()
+    city_info = {'name': '',
+                 'images': [],
+                 'population': 0,
+                 'song': '',
+                 'trades': '',
+                 'aesthetic': '',
+                 'description': '',
+                 'associated_npcs': [],
+                 'associated_specials': [],
+                 'admin_content': {}}
 
-    session_key_receive = """
-        SELECT session_key FROM users
-        WHERE users.id = %s
-        """
+    if check_session_key(user_id, session_key):
+        conn = connect()
+        cur = conn.cursor()
 
-    cur.execute(session_key_receive, [user_id])
+        all_info_query = """
+            SELECT name, population, song, trades, aesthetic, description FROM cities
+            WHERE id = %s
+            """
+        cur.execute(all_info_query, [city_id])
+        all_outcome = cur.fetchall()[0]
+        city_info['name'] = all_outcome[0]
 
-    outcome = cur.fetchall()
+        city_info['images'] = get_associated_city_images(city_id)
 
-    if not outcome:
-        conn.close()
-        return "Bad session_key"
+        city_info['population'] = all_outcome[1]
+        city_info['song'] = all_outcome[2]
+        city_info['trades'] = all_outcome[3]
+        city_info['aesthetic'] = all_outcome[4]
+        city_info['description'] = all_outcome[5]
 
-    if session_key == outcome[0][0]:
+        city_info['associated_npcs'] = get_npcs_by_city(city_id)
+        city_info['associated_specials'] = get_specials_by_city(city_id)
 
         if admin:
-            request = """
-            SELECT * FROM cities
-            WHERE cities.id = %s
-            """
-            cur.execute(request, [city_id])
+            admin_content = {'revealed': None,
+                             'edit_date': ''
+                             }
+            admin_query = """
+                SELECT revealed, edit_date FROM cities
+                WHERE id = %s
+                """
+            cur.execute(admin_query, [city_id])
+            admin_outcome = cur.fetchall[0]
 
-        else:
-            request = """
-                SELECT * FROM cities
-                WHERE cities.id = %s AND cities.revealed = 't'
-            """
-            cur.execute(request, [city_id])
+            admin_content['revealed'] = admin_outcome[0]
+            admin_content['edit_date'] = admin_outcome[1]
 
-        outcome = cur.fetchall()
+            city_info['admin_content'] = admin_content
+
         conn.close()
 
-        return outcome
+    return city_info
 
 
-def get_cities(world, admin, limit, page):
+def get_cities(user_id, session_key, world, limit, page):
     """
     This function will get all the cities in a world
     within a limit
 
+    :param user_id: the id of the user requesting
+    :param session_key: the session key of the user
     :param world: the id of the world being accessed
     :param limit: the number of cities to return
         if None, defaults to 25
-    :param admin: if the user looking is an admin
     :param page: determines the cities to show
 
     :return: a list of cities (name, population, and
-        revealed status if admin)
+        revealed status if admin) each in json format
+
+    :format return: [{ name: city name,
+                       population: city population,
+                       reveal_status: revealed(if admin)}]
     """
-    conn = connect()
-    cur = conn.cursor()
 
-    if limit is None:
-        limit = 25
+    if check_session_key(user_id, session_key):
+        conn = connect()
+        cur = conn.cursor()
+        if limit is None:
+            limit = 25
 
-    if admin:
-        request = """
-        SELECT name, population, revealed FROM cities
-        WHERE cities.world_id = %s
-        LIMIT %s OFFSET %s
-        """
-        cur.execute(request, (world, limit, (page - 1) * limit))
+        city_list = []
 
-    else:
-        request = """
-            SELECT name, population FROM cities
-            WHERE cities.world_id = %s AND cities.revealed = 't'
+        if check_editable(world, user_id, session_key):
+            request = """
+            SELECT name, population, revealed FROM cities
+            WHERE cities.world_id = %s
             LIMIT %s OFFSET %s
-        """
-        cur.execute(request, (world, limit, (page - 1) * limit))
+            """
+            cur.execute(request, (world, limit, (page - 1) * limit))
+            cities_raw = cur.fetchall()
+            city_info = {'name': '',
+                         'population': 0,
+                         'reveal_status': False}
+            for city in cities_raw:
+                city_info['name'] = city[0]
+                city_info['population'] = city[1]
+                city_info['reveal_status'] = city[2]
+                city_list.append(city_info)
 
-    outcome = cur.fetchall()
-    conn.close()
+        else:
+            request = """
+                SELECT name, population FROM cities
+                WHERE cities.world_id = %s AND cities.revealed = 't'
+                LIMIT %s OFFSET %s
+            """
+            cur.execute(request, (world, limit, (page - 1) * limit))
+            cities_raw = cur.fetchall()
+            city_info = {'name': '',
+                         'population': 0}
+            for city in cities_raw:
+                city_info['name'] = city[0]
+                city_info['population'] = city[1]
+                city_list.append(city_info)
 
-    return outcome
+        conn.close()
+        return city_list
+    return []
 
 
-def search_for_city(param, world, admin, limit, page):
+def search_for_city(param, world, limit, page, user_id, session_key):
     """
     This function will search for cities that contain the
     searched string within them.
 
     :param param: the string to search for
     :param world: the world to search in
-    :param admin: if the system should show unrevealed elements
     :param limit: the number of results to show
     :param page: the selection of elements to show
+    :param user_id: the id of the user requesting
+    :param session_key: the session key of the user requesting
 
     :return: the list of cities and their elements that
-        meet the search requirements
+        meet the search requirements in json format
+
+    :format return: [{ name: city name,
+                       population: city population,
+                       reveal_status: revealed(if admin)}]
     """
 
-    conn = connect()
-    cur = conn.cursor()
+    if check_session_key(user_id, session_key):
 
-    if limit is None:
-        limit = 25
+        conn = connect()
+        cur = conn.cursor()
 
-    parts = param.split(" ")
-    content_search = parts[0]
+        if limit is None:
+            limit = 25
 
-    if len(parts) > 1:
-        for part in parts:
-            content_search = content_search + " & "
-            content_search = content_search + part
+        parts = param.split(" ")
+        content_search = parts[0]
 
-    if admin:
-        request = """
-        SELECT name, population, revealed FROM cities
-        WHERE to_tsvector('english', name) @@ to_tsquery('english', %s) AND
-            cities.world_id = %s
-        LIMIT %s OFFSET %s
-        """
-        cur.execute(request, (content_search, world, limit, (page - 1) * limit))
+        if len(parts) > 1:
+            for part in parts:
+                content_search = content_search + " & "
+                content_search = content_search + part
 
-    else:
-        request = """
-            SELECT name, population FROM cities
-            WHERE to_tsvector('english', name) @@ to_tsquery('english', %s) AND 
-                cities.world_id = %s AND cities.revealed = 't'
+        city_list = []
+
+        if check_editable(world, user_id, session_key):
+            request = """
+            SELECT name, population, revealed FROM cities
+            WHERE to_tsvector('english', name) @@ to_tsquery('english', %s) AND
+                cities.world_id = %s
             LIMIT %s OFFSET %s
-        """
-        cur.execute(request, (content_search, world, limit, (page - 1) * limit))
-
-    outcome = cur.fetchall()
-    conn.close()
-
-    return outcome
-
-
-def get_npcs_in_city(city_id, admin):
-    """
-    This function will return the basic information for
-    NPCs in a city
-    :param city_id: the id of the city to be looked at
-    :param admin: if it should show hidden npcs
-
-    :return: the list of viewable NPCs
-
-    :format return: [{ id: npc id,
-                       name: npc name,
-                       revealed: reveal status (if admin)}]
-    """
-    conn = connect()
-    cur = conn.cursor()
-
-    npc_list = []
-
-    if admin:
-        request = """
-            SELECT npc.id, name, revealed FROM city_npc_linker
-                INNER JOIN npcs AS npc ON city_npc_linker.npc_id = npc.id
-            WHERE city_npc_linker.city_id = %s
             """
-        cur.execute(request, [city_id])
-        outcome = cur.fetchall()
+            cur.execute(request, (content_search, world, limit, (page - 1) * limit))
+            cities_raw = cur.fetchall()
+            city_info = {'name': '',
+                         'population': 0,
+                         'reveal_status': False}
+            for city in cities_raw:
+                city_info['name'] = city[0]
+                city_info['population'] = city[1]
+                city_info['reveal_status'] = city[2]
+                city_list.append(city_info)
 
-        for special in outcome:
-            npc_list.append(
-                {'id': special[0],
-                 'name': special[1],
-                 'revealed': special[2]
-                 })
-
-    else:
-        request = """
-            SELECT npc.id, name FROM city_npc_linker
-                INNER JOIN npcs AS npc ON city_npc_linker.npc_id = npc.id
-            WHERE city_npc_linker.city_id = %s AND npc.revealed = 't'
+        else:
+            request = """
+                SELECT name, population FROM cities
+                WHERE to_tsvector('english', name) @@ to_tsquery('english', %s) AND 
+                    cities.world_id = %s AND cities.revealed = 't'
+                LIMIT %s OFFSET %s
             """
-        cur.execute(request, [city_id])
+            cur.execute(request, (content_search, world, limit, (page - 1) * limit))
+            cities_raw = cur.fetchall()
+            city_info = {'name': '',
+                         'population': 0}
+            for city in cities_raw:
+                city_info['name'] = city[0]
+                city_info['population'] = city[1]
+                city_list.append(city_info)
+
         outcome = cur.fetchall()
+        conn.close()
 
-        for special in outcome:
-            npc_list.append(
-                {'id': special[0],
-                 'name': special[1]
-                 })
-
-    conn.close()
-    return npc_list
-
-
-def get_specials_in_city(city_id, admin):
-    """
-    This function will return the basic information for
-    specials in a city
-    :param city_id: the id of the city to be looked at
-    :param admin: if it should show hidden npcs
-
-    :return: the list of viewable specials
-
-    :format return: [{ id: special id,
-                       name: special name,
-                       revealed: reveal status (if admin)}]
-    """
-    conn = connect()
-    cur = conn.cursor()
-
-    special_list = []
-
-    if admin:
-        request = """
-            SELECT special.id, name, revealed FROM city_special_linker
-                INNER JOIN specials AS special ON city_special_linker.special_id = special.id
-            WHERE city_special_linker.city_id = %s
-            """
-        cur.execute(request, [city_id])
-        outcome = cur.fetchall()
-
-        for special in outcome:
-            special_list.append(
-                {'id': special[0],
-                 'name': special[1],
-                 'revealed': special[2]
-                 })
-
-    else:
-        request = """
-            SELECT special.id, name FROM city_special_linker
-                INNER JOIN specials AS special ON city_special_linker.special_id = special.id
-            WHERE city_special_linker.city_id = %s AND special.revealed = 't'
-            """
-        cur.execute(request, [city_id])
-        outcome = cur.fetchall()
-
-        for special in outcome:
-            special_list.append(
-                {'id': special[0],
-                 'name': special[1]
-                 })
-
-    conn.close()
-    return special_list
+        return outcome
+    return []

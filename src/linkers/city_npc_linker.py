@@ -24,7 +24,7 @@ def rebuild_city_npc_linker():
     conn.close()
 
 
-def add_city_npc_association(npc_id, city_id, user_id, session_key):
+def add_city_npc_association(city_id, npc_id, user_id, session_key):
     """
     This function will add an association between
     a city and an npc to the linker table
@@ -37,7 +37,41 @@ def add_city_npc_association(npc_id, city_id, user_id, session_key):
     :return: True if successful, False if not
     """
     if check_session_key(user_id, session_key):
-        # TODO add logic
+        conn = connect()
+        cur = conn.cursor()
+        insert_request = """
+            INSERT INTO city_npc_linker(city_id, npc_id) VALUES
+            (%s, %s)
+            """
+        cur.execute(insert_request, (city_id, npc_id))
+        conn.commit()
+        conn.close()
+        return True
+    return False
+
+
+def remove_city_npc_association(city_id, npc_id, user_id, session_key):
+    """
+    This function will remove an association between
+    a city and an npc to the linker table
+
+    :param npc_id: the id of the npc
+    :param city_id: the id of the city
+    :param user_id: the id of the user requesting this
+    :param session_key: the user's session key
+
+    :return: True if successful, False if not
+    """
+    if check_session_key(user_id, session_key):
+        conn = connect()
+        cur = conn.cursor()
+        delete_request = """
+            DELETE FROM city_npc_linker WHERE
+            city_id = %s AND npc_id = %s
+            """
+        cur.execute(delete_request, (city_id, npc_id))
+        conn.commit()
+        conn.close()
         return True
     return False
 

@@ -25,4 +25,3 @@ def rebuild_specials_table():
     cur.execute(create_sql)
     conn.commit()
     conn.close()
-

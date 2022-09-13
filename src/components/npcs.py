@@ -1,4 +1,7 @@
 from src.linkers.npc_npc_linker import get_associated_npcs
+from src.linkers.npc_special_linker import get_specials_by_npc
+from src.linkers.city_npc_linker import get_cities_by_npc
+from src.linkers.npc_image_linker import get_associated_npc_images
 from src.utils.db_tools import check_session_key
 from src.utils.db_utils import connect
 
@@ -81,15 +84,15 @@ def get_npc_info(npc_id, user_id, session_key, admin):
         all_outcome = cur.fetchall()[0]
         npc_info['name'] = all_outcome[0]
 
-        # TODO get_images
+        npc_info['images'] = get_associated_npc_images(npc_id)
 
         npc_info['age'] = all_outcome[1]
         npc_info['occupation'] = all_outcome[2]
         npc_info['description'] = all_outcome[3]
 
         npc_info['associated_npcs'] = get_associated_npcs(npc_id)
-
-        # TODO get_associated_specials & get_associated_cities
+        npc_info['associated_specials'] = get_specials_by_npc(npc_id)
+        npc_info['associated_cities'] = get_cities_by_npc(npc_id)
 
         if admin:
             admin_content = {'hidden_description': '',

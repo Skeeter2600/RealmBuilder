@@ -156,10 +156,10 @@ def get_owner(world_id):
 
     :return: the info on the owner
     :format return:
-            [{  id:   user id,
-                name: user's name,
-                profile_picture: user's profile picture
-            }]
+            {  id:   user id,
+               name: user's name,
+               profile_picture: user's profile picture
+            }
     """
     conn = connect()
     cur = conn.cursor()
@@ -170,6 +170,15 @@ def get_owner(world_id):
                 """
     cur.execute(owner_request, [world_id])
     outcome = cur.fetchall()
+    conn.close()
+
+    info = {
+        "id": outcome[0][0],
+        "name": outcome[0][1],
+        "profile_picture": outcome[0][2]
+    }
+
+    return info
 
 
 def get_world_user_list(world_id):

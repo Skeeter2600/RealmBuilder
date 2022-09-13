@@ -42,6 +42,58 @@ def rebuild_world_user_linker():
     conn.close()
 
 
+def add_world_user_association(world_id, user_id, requester_id, session_key):
+    """
+    This function will add an association between
+    a world and a user to the linker table
+
+    :param world_id: the id of the city
+    :param user_id: the id of the user being linked
+    :param requester_id: the id of the user requesting this
+    :param session_key: the user's session key
+
+    :return: True if successful, False if not
+    """
+    if check_session_key(requester_id, session_key):
+        conn = connect()
+        cur = conn.cursor()
+        insert_request = """
+            INSERT INTO world_user_linker(world_id, user_id) VALUES
+            (%s, %s)
+            """
+        cur.execute(insert_request, (world_id, user_id))
+        conn.commit()
+        conn.close()
+        return True
+    return False
+
+
+def delete_world_user_association(world_id, user_id, requester_id, session_key):
+    """
+    This function will add an association between
+    a world and a user to the linker table
+
+    :param world_id: the id of the city
+    :param user_id: the id of the user being linked
+    :param requester_id: the id of the user requesting this
+    :param session_key: the user's session key
+
+    :return: True if successful, False if not
+    """
+    if check_session_key(requester_id, session_key):
+        conn = connect()
+        cur = conn.cursor()
+        delete_request = """
+            DELETE FROM world_user_linker WHERE
+            world_id = %s AND user_id = %s
+            """
+        cur.execute(delete_request, (world_id, user_id))
+        conn.commit()
+        conn.close()
+        return True
+    return False
+
+
 def get_new_elements(world_id, user_id, session_key):
     """
     This function will get a list of each type of new

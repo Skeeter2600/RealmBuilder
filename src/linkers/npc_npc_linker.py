@@ -24,20 +24,54 @@ def rebuild_npc_npc_linker():
     conn.close()
 
 
-def add_npc_npc_association(npc1_id, npc2_id, user_id, session_key):
+def add_npc_npc_association(npc_1_id, npc_2_id, user_id, session_key):
     """
     This function will add an association between
-    a city and an npc to the linker table
+    an npc and an npc to the linker table
 
-    :param npc1_id: the id of the npc
-    :param npc2_id: the id of the city
+    :param npc_1_id: the id of the npc
+    :param npc_2_id: the id of the city
     :param user_id: the id of the user requesting this
     :param session_key: the user's session key
 
     :return: True if successful, False if not
     """
     if check_session_key(user_id, session_key):
-        # TODO add logic
+        conn = connect()
+        cur = conn.cursor()
+        insert_request = """
+            INSERT INTO npc_npc_linker(npc_1_id, npc_2_id) VALUES
+            (%s, %s)
+            """
+        cur.execute(insert_request, (npc_1_id, npc_2_id))
+        conn.commit()
+        conn.close()
+        return True
+    return False
+
+
+def remove_special_image_association(npc_1_id, npc_2_id, user_id, session_key):
+    """
+    This function will remove an association between
+    an npc and an npc from the linker table
+
+    :param npc_1_id: the id of the npc
+    :param npc_2_id: the id of the city
+    :param user_id: the id of the user requesting this
+    :param session_key: the user's session key
+
+    :return: True if successful, False if not
+    """
+    if check_session_key(user_id, session_key):
+        conn = connect()
+        cur = conn.cursor()
+        delete_request = """
+            DELETE FROM npc_npc_linker WHERE
+            npc_1_id = %s AND npc_2_id = %s
+            """
+        cur.execute(delete_request, (npc_1_id, npc_2_id))
+        conn.commit()
+        conn.close()
         return True
     return False
 

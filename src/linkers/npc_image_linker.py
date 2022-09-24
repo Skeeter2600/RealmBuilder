@@ -44,10 +44,13 @@ def add_npc_image_association(npc_id, image, user_id, session_key):
             (%s, %s)
             """
         cur.execute(insert_request, (npc_id, image))
+        outcome = cur.fetchall()
 
         conn.commit()
         conn.close()
-        return True
+
+        if outcome != ():
+            return True
     return False
 
 

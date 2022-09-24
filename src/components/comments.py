@@ -1,5 +1,6 @@
 from src.utils.db_tools import check_session_key
 from src.utils.db_utils import connect
+from src.utils.permissions import check_editable
 
 
 def rebuild_comments_table():
@@ -19,6 +20,7 @@ def rebuild_comments_table():
             time                TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
             likes               INTEGER DEFAULT 0,
             dislikes            INTEGER DEFAULT 0,
+            world_id            INTEGER NOT NULL REFERENCES worlds ON DELETE CASCADE,
             component_id        INTEGER NOT NULL,
             component_type      TEXT NOT NULL
         )
@@ -48,11 +50,14 @@ def add_comment(user_id, session_key, comment, component_id, component_type):
         insert_request = """
             INSERT INTO comments(user_id, comment, component_id, component_type) VALUES
             (%s, %s, %s, %s)
+            RETURNING id
                     """
         cur.execute(insert_request, (user_id, comment, component_id, component_type))
+        outcome = cur.fetchall()
         conn.commit()
         conn.close()
-        return True
+        if outcome != ():
+            return True
     return False
 
 
@@ -67,17 +72,27 @@ def delete_comment(user_id, session_key, comment_id):
     :return: True if deleted, False if not
     """
     if check_session_key(user_id, session_key):
-        # TODO add a check for admins or user who made it
         conn = connect()
         cur = conn.cursor()
-        delete_request = """
-            DELETE FROM comments WHERE
-            component_id = %s
+        user_check = """
+            SELECT user_id, world_id FROM comments
+            WHERE component_id = %s
             """
-        cur.execute(delete_request, [comment_id])
-        conn.commit()
-        conn.close()
-        return True
+        cur.execute(user_check, [comment_id])
+        outcome = cur.fetchall()[0]
+        if outcome:
+            if check_editable(outcome[1], user_id, session_key) or outcome[0] == user_id:
+                delete_request = """
+                    DELETE FROM comments WHERE
+                    component_id = %s
+                    RETURNING id
+                    """
+                cur.execute(delete_request, [comment_id])
+                outcome = cur.fetchall()
+                if outcome != ():
+                    conn.commit()
+                    conn.close()
+                    return True
     return False
 
 
@@ -104,7 +119,7 @@ def get_component_comments(component_id, component_table):
     cur = conn.cursor()
 
     comment_request = """
-        SELECT users.id, users.name, users.profile_pic, comment, time, likes, dislikes FROM comments
+        SELECT users.id, users.username, users.profile_pic, comment, time, likes, dislikes FROM comments
             INNER JOIN users ON users.id = comments.user_id
         WHERE component_id = %s AND component_type = %s
         """

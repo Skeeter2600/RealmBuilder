@@ -42,11 +42,15 @@ def add_city_image_association(city_id, image, user_id, session_key):
         insert_request = """
             INSERT INTO city_image_linker(city_id, image) VALUES
             (%s, %s)
+            RETURNING id
             """
         cur.execute(insert_request, (city_id, image))
+        outcome = cur.fetchall()
         conn.commit()
         conn.close()
-        return True
+
+        if outcome != ():
+            return True
     return False
 
 

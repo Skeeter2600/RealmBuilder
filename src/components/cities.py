@@ -1,4 +1,4 @@
-from src.components.worlds import check_editable
+from src.utils.permissions import check_editable
 from src.linkers.city_image_linker import get_associated_city_images
 from src.linkers.city_npc_linker import get_npcs_by_city
 from src.linkers.city_special_linker import get_specials_by_city
@@ -25,7 +25,7 @@ def rebuild_cities_table():
             aesthetic       TEXT,
             description     TEXT NOT NULL,
             revealed        BOOLEAN NOT NULL DEFAULT 'f',
-            edit_date       TIMESTAMP DEFAULT NULL,
+            edit_date       TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
             world_id        INTEGER NOT NULL REFERENCES worlds ON DELETE CASCADE
         )
         """
@@ -33,6 +33,179 @@ def rebuild_cities_table():
     cur.execute(create_sql)
     conn.commit()
     conn.close()
+
+
+def add_city(user_id, session_key, details):
+    """
+    This function will add a new city to the world,
+    given the user is an owner or admin
+
+    :param user_id: the id of the user adding
+    :param session_key: the user's session key
+    :param details: the info on the new city
+
+    :format details:{ world_id: world city is in,
+                      name: city name,
+                      images: [images associated with npc],
+                      population: city population,
+                      song: city song,
+                      trades: city trades,
+                      aesthetic: city aesthetic
+                      description: city description,
+                      associated_npcs: [id: npc id],
+                      associated_specials: [id: special id],
+                      }
+
+    :return: True if successful, False if not
+    """
+    if check_session_key(user_id, session_key):
+        conn = connect()
+        cur = conn.cursor()
+
+        add_request = """
+            INSERT INTO cities(NAME, POPULATION, SONG, TRADES, AESTHETIC, DESCRIPTION, WORLD_ID) 
+            VALUES (%s, %s, %s, %s, %s, %s, %s)
+            RETURNING id
+            """
+        cur.execute(add_request, (details['name'], details['population'], details['song'], details['trades'],
+                                  details['aesthetic'], details['description'], details['world_id']))
+        city_id = conn.fetchall()
+
+        if city_id != ():
+            city_id = city_id[0][0]
+
+            # compile image list to add to city image linker
+            image_add_request = """
+                INSERT INTO city_image_linker(city_id, image) VALUES
+                """
+            add_values = ''
+            for image in details['images']:
+                add_values = add_values + '(' + city_id + ', ' + image + '), '
+
+            add_values = add_values + 'returning id'
+            image_add_request = image_add_request + add_values
+
+            cur.execute(image_add_request)
+            outcome = cur.fetchall()
+            if outcome == ():
+                return False
+
+            # compile the npc list to add to the linker
+            npc_add_request = """
+                INSERT INTO city_npc_linker(city_id, npc_id) VALUES
+                """
+            add_values = ''
+            for npc in details['associated_npcs']:
+                add_values = add_values + '(' + city_id + ', ' + npc + '), '
+
+            add_values = add_values + 'returning id'
+            npc_add_request = npc_add_request + add_values
+
+            cur.execute(npc_add_request)
+            outcome = cur.fetchall()
+            if outcome == ():
+                return False
+
+            # compile the special list to add to the linker
+            special_add_request = """
+                INSERT INTO city_special_linker(city_id, special_id) VALUES
+                """
+            add_values = ''
+            for special in details['associated_specials']:
+                add_values = add_values + '(' + city_id + ', ' + special + '), '
+
+            add_values = add_values + 'returning id'
+            special_add_request = special_add_request + add_values
+
+            cur.execute(special_add_request)
+            outcome = cur.fetchall()
+            if outcome == ():
+                return False
+
+            conn.commit()
+            conn.close()
+            return True
+    return False
+
+
+def delete_city(user_id, session_key, city_id, world_id):
+    """
+    This function will delete a city from the world
+
+    :param user_id: the id of the user requesting
+    :param session_key: the session key of the user requesting
+    :param city_id: id of the city
+    :param world_id: id that the world is in
+
+    :return: True if deleted, False if not
+    """
+    if check_session_key(user_id, session_key):
+        if check_editable(world_id, user_id, session_key):
+            conn = connect()
+            cur = conn.cursor()
+
+            delete_request = """
+                DELETE FROM cities
+                WHERE id = %s
+                returning id
+            """
+            cur.execute(delete_request, [city_id])
+            outcome = cur.fetchall()
+            conn.commit()
+            conn.close()
+
+            if outcome != ():
+                return True
+    return False
+
+
+def edit_city(user_id, session_key, city_id, world_id, details):
+    """
+    This function will modify the elements of a city
+    in a world, give te user can edit it
+
+    :param user_id: the id of the user editing
+    :param session_key: the session_key of the user editing
+    :param city_id: the id of the city being edited
+    :param world_id: the id of the world the city is in
+    :param details: the new info for the city
+
+    :format details: { name: city name,
+                       population: city population,
+                       song: city song,
+                       trades: city trades,
+                       aesthetic: city aesthetic
+                       description: city description,
+                       revealed: T or F,
+                     }
+
+    :return: the updated city info, {} if failure
+    """
+    if check_session_key(user_id, session_key):
+        if check_editable(world_id, user_id, session_key):
+            conn = connect()
+            cur = conn.cursor()
+
+            edit_request = """
+                UPDATE cities SET
+                name = %s, population = %s, song = %s, trades = %s,
+                aesthetic = %s, description = %s, revealed = %s, edit_date = now()
+                WHERE id = %s
+                RETURNING id
+                """
+            cur.execute(edit_request, (details['name'], details['population'], details['song'], details['trades'],
+                                       details['aesthetic'], details['description'], details['revealed'], city_id))
+            outcome = cur.fetchall()
+
+            if outcome == ():
+                conn.close()
+                return {}
+            conn.commit()
+            conn.close()
+
+            return get_city(user_id, session_key, city_id, True)
+
+    return {}
 
 
 def get_city(user_id, session_key, city_id, admin):
@@ -62,6 +235,7 @@ def get_city(user_id, session_key, city_id, admin):
                             revealed: T or F,
                             edit_date: last time updated
                       } (empty if not admin)
+                    }
     """
     city_info = {'name': '',
                  'images': [],
@@ -202,7 +376,7 @@ def search_for_city(param, world, limit, page, user_id, session_key):
                        population: city population,
                        reveal_status: revealed(if admin)}]
     """
-
+    city_list = []
     if check_session_key(user_id, session_key):
 
         conn = connect()
@@ -218,8 +392,6 @@ def search_for_city(param, world, limit, page, user_id, session_key):
             for part in parts:
                 content_search = content_search + " & "
                 content_search = content_search + part
-
-        city_list = []
 
         if check_editable(world, user_id, session_key):
             request = """
@@ -254,9 +426,6 @@ def search_for_city(param, world, limit, page, user_id, session_key):
                 city_info['name'] = city[0]
                 city_info['population'] = city[1]
                 city_list.append(city_info)
-
-        outcome = cur.fetchall()
         conn.close()
 
-        return outcome
-    return []
+    return city_list

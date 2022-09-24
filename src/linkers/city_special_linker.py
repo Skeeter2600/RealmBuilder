@@ -42,11 +42,16 @@ def add_city_special_association(city_id, special_id, user_id, session_key):
         insert_request = """
             INSERT INTO city_special_linker(city_id, special_id) VALUES
             (%s, %s)
+            RETURNING id
             """
         cur.execute(insert_request, (city_id, special_id))
+        outcome = cur.fetchall()
+
         conn.commit()
         conn.close()
-        return True
+
+        if outcome != ():
+            return True
     return False
 
 
@@ -68,11 +73,14 @@ def remove_city_special_association(city_id, special_id, user_id, session_key):
         delete_request = """
             DELETE FROM city_special_linker WHERE
             city_id = %s AND special_id = %s
+            RETURNING id
             """
         cur.execute(delete_request, (city_id, special_id))
-        conn.commit()
-        conn.close()
-        return True
+        outcome = cur.fetchall()
+        if outcome != ():
+            conn.commit()
+            conn.close()
+            return True
     return False
 
 

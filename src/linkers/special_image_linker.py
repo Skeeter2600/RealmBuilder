@@ -42,11 +42,16 @@ def add_special_image_association(special_id, image, user_id, session_key):
         insert_request = """
             INSERT INTO special_image_linker(special_id, image) VALUES
             (%s, %s)
+            RETURNING id
             """
         cur.execute(insert_request, (special_id, image))
+        outcome = cur.fetchall()
+
         conn.commit()
         conn.close()
-        return True
+
+        if outcome != ():
+            return True
     return False
 
 

@@ -42,11 +42,16 @@ def add_city_npc_association(city_id, npc_id, user_id, session_key):
         insert_request = """
             INSERT INTO city_npc_linker(city_id, npc_id) VALUES
             (%s, %s)
+            RETURNING id
             """
         cur.execute(insert_request, (city_id, npc_id))
+        outcome = cur.fetchall()
+
         conn.commit()
         conn.close()
-        return True
+
+        if outcome != ():
+            return True
     return False
 
 

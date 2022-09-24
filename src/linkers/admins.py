@@ -43,11 +43,15 @@ def add_world_user_association(world_id, user_id, requester_id, session_key):
         insert_request = """
             INSERT INTO admins(world_id, user_id) VALUES
             (%s, %s)
+            RETURNING id
             """
         cur.execute(insert_request, (world_id, user_id))
+        outcome = cur.fetchall()
         conn.commit()
         conn.close()
-        return True
+
+        if outcome != ():
+            return True
     return False
 
 

@@ -42,11 +42,16 @@ def add_npc_special_association(npc_id, special_id, user_id, session_key):
         insert_request = """
             INSERT INTO npc_special_linker(npc_id, special_id) VALUES
             (%s, %s)
+            RETURNING id
             """
         cur.execute(insert_request, (npc_id, special_id))
+        outcome = cur.fetchall()
+
         conn.commit()
         conn.close()
-        return True
+
+        if outcome != ():
+            return True
     return False
 
 

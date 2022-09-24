@@ -25,7 +25,7 @@ def rebuild_npcs_table():
             description         TEXT NOT NULL,
             hidden_description  TEXT DEFAULT NULL,
             revealed            BOOLEAN NOT NULL DEFAULT 'f',
-            edit_date           TIMESTAMP DEFAULT NULL,
+            edit_date           TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
             world_id            INTEGER NOT NULL REFERENCES worlds ON DELETE CASCADE
         )
         """
@@ -152,6 +152,47 @@ def add_npc(user_id, session_key, details):
             conn.close()
             return True
 
+    return False
+
+
+def copy_npc(user_id, session_key, npc_id, world_id):
+    """
+    This function will make a copy of the specified npc
+    in the world of the user's choice, given they have permission
+    to create new elements
+
+    :param user_id: the id of the user requesting
+    :param session_key: the session key of the user
+    :param npc_id: the id of the special
+    :param world_id: the id of the world
+
+    :return: the info of the new element if done, {} if failure
+    """
+    if check_editable(world_id, user_id, session_key):
+        conn = connect()
+        cur = conn.cursor()
+        duplicate_request = """
+            INSERT INTO npcs(name, age, occupation, description, world_id)
+            SELECT name, age, occupation, description, world_id FROM npcs
+            WHERE id = %s
+            RETURNING id
+            """
+        cur.execute(duplicate_request, [npc_id])
+        new_id = cur.fetchall()[0][0]
+
+        change_world = """
+            UPDATE npcs SET
+            world_id = %s
+            WHERE id = %s
+            RETURNING id
+            """
+        cur.execute(change_world, (world_id, new_id))
+
+        outcome = cur.fetchall()
+        conn.commit()
+        conn.close()
+        if outcome != ():
+            return get_npc_info(user_id, session_key, outcome, True)
     return False
 
 
@@ -314,6 +355,38 @@ def get_npc_info(npc_id, user_id, session_key, admin):
         conn.close()
 
     return npc_info
+
+
+def reveal_hidden_npc(user_id, session_key, world_id, npc_id):
+    """
+    This function will reveal the hidden description by amending
+    it to the description, given the user requesting has edit permission
+
+    :param user_id: id of the user requesting
+    :param session_key: the user's session key
+    :param world_id: the id of the world the special is in
+    :param npc_id: the id of the npc to be revealed
+
+    :return: The npc's info if good, {} if bad
+    """
+    if check_editable(world_id, user_id, session_key):
+        conn = connect()
+        cur = conn.cursor()
+
+        reveal_query = """
+        UPDATE npcs SET
+        description = concat(description, '\n\nREVEAL\n\n', hidden_description)
+        WHERE id = %s
+        returning id
+        """
+        cur.execute(reveal_query, [npc_id])
+        outcome = cur.fetchall()
+        conn.commit()
+        conn.close()
+        if outcome != ():
+            return get_npc_info(user_id, session_key, npc_id, True)
+
+    return {}
 
 
 def search_for_npc(param, world, limit, page, user_id, session_key):

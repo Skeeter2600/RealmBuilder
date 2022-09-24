@@ -22,7 +22,7 @@ def rebuild_specials_table():
             description         TEXT NOT NULL,
             hidden_description  TEXT DEFAULT NULL,
             revealed            BOOLEAN NOT NULL DEFAULT 'f',
-            edit_date           TIMESTAMP DEFAULT NULL,
+            edit_date           TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
             world_id            INTEGER NOT NULL REFERENCES worlds ON DELETE CASCADE
         )
         """
@@ -52,7 +52,7 @@ def add_special(user_id, session_key, details):
 
     :return: True if successful, False if not
     """
-    if check_session_key(user_id, session_key):
+    if check_editable(details['world_id'], user_id, session_key):
         conn = connect()
         cur = conn.cursor()
 
@@ -132,6 +132,47 @@ def add_special(user_id, session_key, details):
     return False
 
 
+def copy_special(user_id, session_key, special_id, world_id):
+    """
+    This function will make a copy of the specified special
+    in the world of the user's choice, given they have permission
+    to create new elements
+
+    :param user_id: the id of the user requesting
+    :param session_key: the session key of the user
+    :param special_id: the id of the special
+    :param world_id: the id of the world
+
+    :return: the info of the new element if done, {} if failure
+    """
+    if check_editable(world_id, user_id, session_key):
+        conn = connect()
+        cur = conn.cursor()
+        duplicate_request = """
+            INSERT INTO specials(name, description, world_id)
+            SELECT name, description, world_id FROM specials
+            WHERE id = %s
+            RETURNING id
+            """
+        cur.execute(duplicate_request, [special_id])
+        new_id = cur.fetchall()[0][0]
+
+        change_world = """
+            UPDATE specials SET
+            world_id = %s
+            WHERE id = %s
+            RETURNING id
+            """
+        cur.execute(change_world, (world_id, new_id))
+
+        outcome = cur.fetchall()
+        conn.commit()
+        conn.close()
+        if outcome != ():
+            return get_special_info(user_id, session_key, outcome, True)
+    return False
+
+
 def delete_special(user_id, session_key, special_id, world_id):
     """
     This function will delete a npc from the world
@@ -143,23 +184,22 @@ def delete_special(user_id, session_key, special_id, world_id):
 
     :return: True if deleted, False if not
     """
-    if check_session_key(user_id, session_key):
-        if check_editable(world_id, user_id, session_key):
-            conn = connect()
-            cur = conn.cursor()
+    if check_editable(world_id, user_id, session_key):
+        conn = connect()
+        cur = conn.cursor()
 
-            delete_request = """
-                DELETE FROM specials
-                WHERE id = %s
-                returning id
-            """
-            cur.execute(delete_request, [special_id])
-            outcome = cur.fetchall()
-            conn.commit()
-            conn.close()
+        delete_request = """
+            DELETE FROM specials
+            WHERE id = %s
+            returning id
+        """
+        cur.execute(delete_request, [special_id])
+        outcome = cur.fetchall()
+        conn.commit()
+        conn.close()
 
-            if outcome != ():
-                return True
+        if outcome != ():
+            return True
     return False
 
 
@@ -181,33 +221,32 @@ def edit_special(user_id, session_key, special_id, world_id, details):
 
     :return: the updated special info, {} if failure
     """
-    if check_session_key(user_id, session_key):
-        if check_editable(world_id, user_id, session_key):
-            conn = connect()
-            cur = conn.cursor()
+    if check_editable(world_id, user_id, session_key):
+        conn = connect()
+        cur = conn.cursor()
 
-            edit_request = """
-                UPDATE specials SET
-                name = %s, description = %s, revealed = %s, edit_date = now()
-                WHERE id = %s
-                RETURNING id
-                """
-            cur.execute(edit_request, (details['name'], details['description'], details['revealed'], special_id))
-            outcome = cur.fetchall()
+        edit_request = """
+            UPDATE specials SET
+            name = %s, description = %s, revealed = %s, edit_date = now()
+            WHERE id = %s
+            RETURNING id
+            """
+        cur.execute(edit_request, (details['name'], details['description'], details['revealed'], special_id))
+        outcome = cur.fetchall()
 
-            if outcome == ():
-                conn.close()
-                return {}
-
-            conn.commit()
+        if outcome == ():
             conn.close()
+            return {}
 
-            return get_special_info(user_id, session_key, special_id, True)
+        conn.commit()
+        conn.close()
+
+        return get_special_info(user_id, session_key, special_id, True)
 
     return {}
 
 
-def get_special_info(special_id, user_id, session_key, admin):
+def get_special_info(user_id, session_key, special_id, admin):
     """
     This function will get the information associated
     with an NPC based on the user's permissions
@@ -278,6 +317,38 @@ def get_special_info(special_id, user_id, session_key, admin):
         conn.close()
 
     return special_info
+
+
+def reveal_hidden_special(user_id, session_key, world_id, special_id):
+    """
+    This function will reveal the hidden description by amending
+    it to the description, given the user requesting has edit permission
+
+    :param user_id: id of the user requesting
+    :param session_key: the user's session key
+    :param world_id: the id of the world the special is in
+    :param special_id: the id of the special to be revealed
+
+    :return: The special's info if good, {} if bad
+    """
+    if check_editable(world_id, user_id, session_key):
+        conn = connect()
+        cur = conn.cursor()
+
+        reveal_query = """
+        UPDATE specials SET
+        description = concat(description, '\n\nREVEAL\n\n', hidden_description)
+        WHERE id = %s
+        returning id
+        """
+        cur.execute(reveal_query, [special_id])
+        outcome = cur.fetchall()
+        conn.commit()
+        conn.close()
+        if outcome != ():
+            return get_special_info(user_id, session_key, special_id, True)
+
+    return {}
 
 
 def search_for_special(param, world, limit, page, user_id, session_key):

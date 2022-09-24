@@ -71,8 +71,9 @@ def check_editable(world_id, user_id, session_key):
             )
             """
         cur.execute(owner_request, (user_id, world_id))
+
         # if user not the owner
-        if not cur.fetchall():
+        if not cur.fetchall()[0][0]:
             admin_request = """
                 SELECT EXISTS(
                     SELECT 1 FROM admins
@@ -81,7 +82,7 @@ def check_editable(world_id, user_id, session_key):
                 """
             cur.execute(admin_request, (user_id, world_id))
             # if user is admin
-            outcome = cur.fetchall()
+            outcome = cur.fetchall()[0][0]
             conn.close()
             return outcome
         # user is owner

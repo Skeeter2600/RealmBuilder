@@ -40,12 +40,15 @@ class MyTestCase(unittest.TestCase):
         rebuild_tables()
         load_data()
 
+        beck_session_key = login_user('Beck', 'RiamChesteroot26')
+        charles_session_key = login_user('Charles', 'CalvionNeedsAA')
+
         # searching in Savior's Cradle for all cities as admin, should be 3
-        outcome = get_cities(3, True, 4, 1)
+        outcome = get_cities(1, beck_session_key, 3, None, 1)
         self.assertEqual(3, outcome.__len__(), "not the right number of cities")
 
         # searching in Savior's Cradle for all cities as normal user, should be 2
-        outcome = get_cities(3, False, 4, 1)
+        outcome = get_cities(1, charles_session_key, 3, None, 1)
         self.assertEqual(2, outcome.__len__(), "not the right number of cities")
 
     def test_search_cities(self):
@@ -56,14 +59,24 @@ class MyTestCase(unittest.TestCase):
         rebuild_tables()
         load_data()
 
+        beck_session_key = login_user('Beck', 'RiamChesteroot26')
+        charles_session_key = login_user('Charles', 'CalvionNeedsAA')
+
         # searching for cities with the string 'Meridia' as an admin, expecting 2 results
-        outcome = search_for_city('Meridia', 3, True, 4, 1)
-        self.assertEqual([('New Meridia', 10392, False),('Meridia', 1392, True)],
+        outcome = search_for_city('Meridia', 3, None, 1, 1, beck_session_key)
+        self.assertEqual([{'name': 'New Meridia', 'population': 10392, 'reveal_status': False},
+                          {'name': 'Meridia', 'population': 1392, 'reveal_status': True}],
                          outcome, "not the right cities")
 
         # searching for cities with the string 'Meridia' as a user, expecting 1 result
-        outcome = search_for_city('Meridia', 3, False, 4, 1)
-        self.assertEqual([('Meridia', 1392)], outcome, "not the right cities")
+        outcome = search_for_city('Meridia', 3, None, 1, 4, charles_session_key)
+        self.assertEqual([{'name': 'Meridia', 'population': 1392}], outcome, "not the right cities")
+
+        outcome = search_for_city('e', 3, None, 1, 1, beck_session_key)
+        self.assertEqual(len(outcome), 3, "not the right number of cities")
+
+        outcome = search_for_city('e', 3, None, 1, 4, charles_session_key)
+        self.assertEqual(len(outcome), 2, "not the right number of cities")
 
     def test_get_npcs_in_city(self):
         """
@@ -74,7 +87,7 @@ class MyTestCase(unittest.TestCase):
         load_data()
 
         # loading the npcs in Meridia as an admin, expecting 2 results
-        outcome = get_npcs_in_city(5, True)
+        outcome = get
         self.assertEqual(2, outcome.__len__(), "didn't get all of the NPCs in Meridia")
 
         # loading the npcs in Meridia as a user, expecting 1 result

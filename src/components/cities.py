@@ -56,7 +56,7 @@ def add_city(user_id, session_key, details):
                       associated_specials: [id: special id],
                       }
 
-    :return: True if successful, False if not
+    :return: [created boolean, city id (-1 if failed)]
     """
     if check_session_key(user_id, session_key):
         conn = connect()
@@ -69,63 +69,79 @@ def add_city(user_id, session_key, details):
             """
         cur.execute(add_request, (details['name'], details['population'], details['song'], details['trades'],
                                   details['aesthetic'], details['description'], details['world_id']))
-        city_id = conn.fetchall()
+        city_id = cur.fetchall()
 
         if city_id != ():
             city_id = city_id[0][0]
 
             # compile image list to add to city image linker
-            image_add_request = """
-                INSERT INTO city_image_linker(city_id, image) VALUES
-                """
-            add_values = ''
-            for image in details['images']:
-                add_values = add_values + '(' + city_id + ', ' + image + '), '
+            if len(details['images']) > 0:
+                image_add_request = """
+                    INSERT INTO city_image_linker(city_id, image) VALUES
+                    """
+                add_values = ''
+                length = len(details['images'])
+                i = 0
+                while i < length-1:
+                    add_values = add_values + '(' + str(city_id) + ', ' + str(details['images'][i]) + '), '
+                    i += 1
+                add_values = add_values + '(' + str(city_id) + ', ' + str(details['images'][i]) + ') '
 
-            add_values = add_values + 'returning id'
-            image_add_request = image_add_request + add_values
+                add_values = add_values + ' returning id'
+                image_add_request = image_add_request + add_values
 
-            cur.execute(image_add_request)
-            outcome = cur.fetchall()
-            if outcome == ():
-                return False
+                cur.execute(image_add_request)
+                outcome = cur.fetchall()
+                if outcome == ():
+                    return False
 
             # compile the npc list to add to the linker
-            npc_add_request = """
-                INSERT INTO city_npc_linker(city_id, npc_id) VALUES
-                """
-            add_values = ''
-            for npc in details['associated_npcs']:
-                add_values = add_values + '(' + city_id + ', ' + npc + '), '
+            if len(details['associated_npcs']) > 0:
+                npc_add_request = """
+                    INSERT INTO city_npc_linker(city_id, npc_id) VALUES
+                    """
+                add_values = ''
+                length = len(details['associated_npcs'])
+                i = 0
+                while i < length-1:
+                    add_values = add_values + '(' + str(city_id) + ', ' + str(details['associated_npcs'][i]) + '), '
+                    i += 1
+                add_values = add_values + '(' + str(city_id) + ', ' + str(details['associated_npcs'][i]) + ') '
 
-            add_values = add_values + 'returning id'
-            npc_add_request = npc_add_request + add_values
+                add_values = add_values + ' returning id'
+                npc_add_request = npc_add_request + add_values
 
-            cur.execute(npc_add_request)
-            outcome = cur.fetchall()
-            if outcome == ():
-                return False
+                cur.execute(npc_add_request)
+                outcome = cur.fetchall()
+                if outcome == ():
+                    return False
 
             # compile the special list to add to the linker
-            special_add_request = """
-                INSERT INTO city_special_linker(city_id, special_id) VALUES
-                """
-            add_values = ''
-            for special in details['associated_specials']:
-                add_values = add_values + '(' + city_id + ', ' + special + '), '
+            if len(details['associated_specials']) > 0:
+                special_add_request = """
+                    INSERT INTO city_special_linker(city_id, special_id) VALUES
+                    """
+                add_values = ''
+                length = len(details['associated_specials'])
+                i = 0
+                while i < length-1:
+                    add_values = add_values + '(' + str(city_id) + ', ' + str(details['associated_npcs'][i]) + '), '
+                    i += 1
 
-            add_values = add_values + 'returning id'
-            special_add_request = special_add_request + add_values
+                add_values = add_values + '(' + str(city_id) + ', ' + str(details['associated_specials'][i]) + ') '
 
-            cur.execute(special_add_request)
-            outcome = cur.fetchall()
-            if outcome == ():
-                return False
+                add_values = add_values + ' returning id'
+                special_add_request = special_add_request + add_values
+
+                cur.execute(special_add_request)
+                outcome = cur.fetchall()
+                if outcome == ():
+                    return False
 
             conn.commit()
             conn.close()
-            return True
-    return False
+            return [True, city_id]
+    return [False, -1]
 
 
 def delete_city(user_id, session_key, city_id, world_id):
@@ -176,11 +192,38 @@ def edit_city(user_id, session_key, city_id, world_id, details):
                        trades: city trades,
                        aesthetic: city aesthetic
                        description: city description,
-                       revealed: T or F,
+                       revealed: T or F
                      }
 
-    :return: the updated city info, {} if failure
+    :return: the updated city info, fail format if failure
+
+    :format return: { name: city name,
+                  images: [images associated with npc],
+                  population: city population,
+                  song: city song,
+                  trades: city trades,
+                  aesthetic: city aesthetic
+                  description: city description,
+                  associated_npcs: [{id: npc id,
+                                     name: npc name}]
+                  associated_specials: [{id: special id,
+                                         name: special name}],
+                  admin_content: {
+                        revealed: T or F,
+                        edit_date: last time updated
+                  } (empty if not admin)
+                }
     """
+    fail_format = {'name': '',
+                   'images': [],
+                   'population': 0,
+                   'song': '',
+                   'trades': '',
+                   'aesthetic': '',
+                   'description': '',
+                   'associated_npcs': [],
+                   'associated_specials': [],
+                   'admin_content': {}}
     if check_session_key(user_id, session_key):
         if check_editable(world_id, user_id, session_key):
             conn = connect()
@@ -199,13 +242,13 @@ def edit_city(user_id, session_key, city_id, world_id, details):
 
             if outcome == ():
                 conn.close()
-                return {}
+                return fail_format
             conn.commit()
             conn.close()
 
             return get_city(user_id, session_key, city_id, True)
 
-    return {}
+    return fail_format
 
 
 def get_city(user_id, session_key, city_id, admin):
@@ -256,36 +299,43 @@ def get_city(user_id, session_key, city_id, admin):
             SELECT name, population, song, trades, aesthetic, description FROM cities
             WHERE id = %s
             """
+
+        if not admin:
+            all_info_query = all_info_query + " AND revealed = 't'"
+
         cur.execute(all_info_query, [city_id])
-        all_outcome = cur.fetchall()[0]
-        city_info['name'] = all_outcome[0]
+        all_outcome = cur.fetchall()
 
-        city_info['images'] = get_associated_city_images(city_id)
+        if len(all_outcome) > 0:
+            all_outcome = all_outcome[0]
+            city_info['name'] = all_outcome[0]
 
-        city_info['population'] = all_outcome[1]
-        city_info['song'] = all_outcome[2]
-        city_info['trades'] = all_outcome[3]
-        city_info['aesthetic'] = all_outcome[4]
-        city_info['description'] = all_outcome[5]
+            city_info['images'] = get_associated_city_images(city_id)
 
-        city_info['associated_npcs'] = get_npcs_by_city(city_id)
-        city_info['associated_specials'] = get_specials_by_city(city_id)
+            city_info['population'] = all_outcome[1]
+            city_info['song'] = all_outcome[2]
+            city_info['trades'] = all_outcome[3]
+            city_info['aesthetic'] = all_outcome[4]
+            city_info['description'] = all_outcome[5]
 
-        if admin:
-            admin_content = {'revealed': None,
-                             'edit_date': ''
-                             }
-            admin_query = """
-                SELECT revealed, edit_date FROM cities
-                WHERE id = %s
-                """
-            cur.execute(admin_query, [city_id])
-            admin_outcome = cur.fetchall[0]
+            city_info['associated_npcs'] = get_npcs_by_city(user_id, session_key, city_id)
+            city_info['associated_specials'] = get_specials_by_city(user_id, session_key, city_id)
 
-            admin_content['revealed'] = admin_outcome[0]
-            admin_content['edit_date'] = admin_outcome[1]
+            if admin:
+                admin_content = {'revealed': None,
+                                 'edit_date': ''
+                                 }
+                admin_query = """
+                    SELECT revealed, edit_date FROM cities
+                    WHERE id = %s
+                    """
+                cur.execute(admin_query, [city_id])
+                admin_outcome = cur.fetchall()[0]
 
-            city_info['admin_content'] = admin_content
+                admin_content['revealed'] = admin_outcome[0]
+                admin_content['edit_date'] = admin_outcome[1]
+
+                city_info['admin_content'] = admin_content
 
         conn.close()
 

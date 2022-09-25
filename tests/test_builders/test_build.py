@@ -285,15 +285,16 @@ def load_data():
 
     #    npcs and their ids, worlds, location, hidden description status, and reveal status
 
-    # Margarette Chesteroot | 1 | Dralbrar                    | Charlote             | False | False
-    # Soni Paustel          | 2 | Out of Touch                | Null                 | False | False
-    # Prometheus            | 3 | Three Lords Sword Coast     | Greenest(2)          | False | False
-    # Prometheus            | 4 | Saviors' Cradle Sword Coast | Meridia, Greenest(7) | False | False
-    # Riam Chesteroot       | 5 | Saltmarsh                   | Saltmarsh            | False | True
-    # Prometheus            | 6 | Out of Touch                | Null                 | False | True
-    # Oliver Quinn          | 7 | Saviors' Cradle Sword Coast | Meridia              | True  | True
-    # Richard Nixon         | 8 | Real World                  | Washington D.C.      | True  | True
-    # Evelyn                | 9 | Saviors' Cradle Sword Coast | Null                 | True  | False
+    # Margarette Chesteroot | 1  | Dralbrar                    | Charlote         | False | False | None
+    # Soni Paustel          | 2  | Out of Touch                | Null             | False | False | 6
+    # Prometheus            | 3  | Three Lords Sword Coast     | Greenest         | False | False | None
+    # Prometheus            | 4  | Saviors' Cradle Sword Coast | Meridia, Greenest| False | False | 10, 7
+    # Riam Chesteroot       | 5  | Saltmarsh                   | Saltmarsh        | False | True  | None
+    # Prometheus            | 6  | Out of Touch                | Null             | False | True  | 2
+    # Thuacc                | 7  | Saviors' Cradle Sword Coast | Meridia          | True  | True  | 4, 10
+    # Oliver Quinn          | 8  | Saviors' Cradle Sword Coast | Meridia          | True  | True  | 10
+    # Richard Nixon         | 9  | Real World                  | Washington D.C.  | True  | True  | None
+    # Evelyn                | 10 | Saviors' Cradle Sword Coast | Null             | True  | False | 4, 7, 8
 
     link_npcs_and_cities = """
         INSERT INTO city_npc_linker(city_id, npc_id) VALUES
@@ -303,7 +304,8 @@ def load_data():
             (7, 4),
             (6, 5),
             (5, 7),
-            (8, 8)
+            (5, 8),
+            (8, 9)
         """
     cur.execute(link_npcs_and_cities)
     conn.commit()

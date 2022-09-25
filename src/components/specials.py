@@ -377,22 +377,16 @@ def search_for_special(param, world, limit, page, user_id, session_key):
         if limit is None:
             limit = 25
 
-        parts = param.split(" ")
-        content_search = parts[0]
-
-        if len(parts) > 1:
-            for part in parts:
-                content_search = content_search + " & "
-                content_search = content_search + part
+        param = '%' + param + '%'
 
         if check_editable(world, user_id, session_key):
             request = """
-            SELECT name, revealed FROM specials
-            WHERE to_tsvector('english', name) @@ to_tsquery('english', %s) AND
-                specials.world_id = %s
-            LIMIT %s OFFSET %s
+                SELECT name, revealed FROM specials
+                WHERE name ILIKE %s AND
+                    specials.world_id = %s
+                LIMIT %s OFFSET %s
             """
-            cur.execute(request, (content_search, world, limit, (page - 1) * limit))
+            cur.execute(request, (param, world, limit, (page - 1) * limit))
             specials_raw = cur.fetchall()
             special_info = {'name': '',
                             'reveal_status': False}
@@ -404,11 +398,11 @@ def search_for_special(param, world, limit, page, user_id, session_key):
         else:
             request = """
                 SELECT name FROM specials
-                WHERE to_tsvector('english', name) @@ to_tsquery('english', %s) AND 
+                WHERE name ILIKE %s AND
                     specials.world_id = %s AND specials.revealed = 't'
                 LIMIT %s OFFSET %s
             """
-            cur.execute(request, (content_search, world, limit, (page - 1) * limit))
+            cur.execute(request, (param, world, limit, (page - 1) * limit))
             specials_raw = cur.fetchall()
             special_info = {'name': ''}
             for special in specials_raw:

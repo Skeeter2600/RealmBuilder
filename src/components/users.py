@@ -30,6 +30,47 @@ def rebuild_users_table():
     conn.close()
 
 
+def create_user(username, password, email):
+    """
+    This function will create a new user
+    :param username: The new user's username
+    :param password: The new user's password
+    :param email: the new user's email
+    :return: a message based on the status
+    """
+    conn = connect()
+    cur = conn.cursor()
+
+    username_check = """
+        SELECT COUNT(*) FROM users
+        WHERE username = %s
+        """
+    cur.execute(username_check, [username])
+    outcome = cur.fetchall()
+
+    if len(outcome) > 0:
+        conn.close()
+        return "A user with that username already exists"
+
+    encrypted = hashlib.sha512(password.encode()).hexdigest()
+
+    add_user = """
+        INSERT INTO users(username, password, email) VALUES
+        (%s, %s, %s)
+        RETURNING id
+        """
+    cur.execute(add_user, (username, encrypted, email))
+    outcome = cur.fetchall()
+
+    if outcome == ():
+        conn.close()
+        return "An error occurred, try again"
+
+    conn.commit()
+    conn.close()
+    return "Success!"
+
+
 def login_user(username, password):
     """
     This will log a user in and get them the session

@@ -20,6 +20,7 @@ def rebuild_users_table():
             username        TEXT NOT NULL,
             password        TEXT NOT NULL,
             profile_pic     bytea DEFAULT NULL,
+            bio             TEXT,
             email           TEXT NOT NULL,
             session_key     TEXT
         )
@@ -48,7 +49,7 @@ def create_user(username, password, email):
     cur.execute(username_check, [username])
     outcome = cur.fetchall()
 
-    if len(outcome) > 0:
+    if outcome[0][0] > 0:
         conn.close()
         return "A user with that username already exists"
 
@@ -69,6 +70,111 @@ def create_user(username, password, email):
     conn.commit()
     conn.close()
     return "Success!"
+
+
+def delete_user(user_id, session_key):
+    """
+    This function will delete a user and for each
+    world they own, will try to move ownership to an
+    admin
+    :param user_id: the id of the user deleting
+    :param session_key: the user's session key
+    :return: True if successful, False if failure
+    """
+    if check_session_key(user_id, session_key):
+        conn = connect()
+        cur = conn.cursor()
+
+        worlds_check = """
+            SELECT id FROM worlds
+            WHERE owner_id = %s
+            """
+
+        cur.execute(worlds_check, [user_id])
+        worlds = cur.fetchall()
+        if worlds != ():
+            for world in worlds:
+                admin_check = """
+                    SELECT user_id FROM admins
+                    WHERE world_id = %s
+                    """
+                cur.execute(admin_check, [world])
+                users = cur.fetchall()
+                if len(users) > 0:
+                    update_world = """
+                        UPDATE worlds SET
+                        owner_id = %s
+                        WHERE id = %s
+                        """
+                    cur.execute(update_world, (user_id, world))
+                    delete_admin_link = """
+                        DELETE FROM admins
+                        WHERE user_id = %s AND world_id = %s
+                        """
+                    cur.execute(delete_admin_link, (user_id, world))
+
+            delete_user = """
+                DELETE FROM users
+                WHERE id = %s
+                RETURNING id
+                """
+            cur.execute(delete_user, [user_id])
+            outcome = cur.fetchall()
+            conn.commit()
+            conn.close()
+
+            if outcome != ():
+                return True
+
+    return False
+
+
+def get_user_public(user_id):
+    """
+    This function will get public the info on a user
+    :param user_id: the user's id
+    :return: the user's info in json format
+
+    :format return: { username: user's username,
+                      profile_pic: user's profile picture,
+                      bio: the user's bio,
+                      worlds: [{id: world id,
+                                name: world name} (note: only public ones)]
+                    }
+    """
+    info = {'username': '',
+            'profile_pic': '',
+            'bio': '',
+            'worlds': []}
+    conn = connect()
+    cur = conn.cursor()
+
+    info_query = """
+        SELECT username, profile_pic, bio FROM users 
+        WHERE id = %s
+        """
+    cur.execute(info_query, [user_id])
+    values = cur.fetchall()
+    if len(values) > 0:
+        values = values[0]
+        info['username'] = values[0]
+        info['profile_pic'] = values[1]
+        info['bio'] = values[2]
+
+        worlds_selection = """
+            SELECT world_id, name FROM world_user_linker
+            INNER JOIN worlds ON world_user_linker.world_id = worlds.id
+            WHERE user_id = %s
+            """
+        cur.execute(worlds_selection, [user_id])
+        worlds = cur.fetchall()
+
+        for world in worlds:
+            info['worlds'].append({'id': world[0],
+                                   'name': world[1]})
+
+    conn.close()
+    return info
 
 
 def login_user(username, password):

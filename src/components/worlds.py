@@ -18,8 +18,8 @@ def rebuild_worlds_table():
         CREATE TABLE worlds(
             id              SERIAL PRIMARY KEY,
             name            TEXT NOT NULL,
-            description     TEXT,
-            owner_id        INTEGER NOT NULL REFERENCES users,
+            description     TEXT NOT NULL,
+            owner_id        INTEGER NOT NULL REFERENCES users ON DELETE CASCADE,
             public          BOOLEAN NOT NULL DEFAULT 'f'
         )
         """
@@ -50,6 +50,12 @@ def add_world(name, owner_id):
     conn.commit()
     conn.close()
     if outcome != ():
+        insert_request = """
+            INSERT INTO world_user_linker(world_id, user_id) VALUES
+            (%s, %s)
+            RETURNING id
+            """
+        cur.execute(insert_request, (outcome[0][0], owner_id))
         return outcome[0][0]
     return False
 

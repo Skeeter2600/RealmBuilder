@@ -1,3 +1,4 @@
+import json
 import unittest
 
 from src.components.users import *
@@ -6,6 +7,85 @@ from tests.test_builders.test_build import load_data
 
 
 class MyTestCase(unittest.TestCase):
+
+    def test_create_account(self):
+        """
+        This function will test the creation of a
+        new account.
+        """
+        rebuild_tables()
+        load_data()
+
+        print("\n Making a new account where another individual had the same username:\n"
+              "    username: Beck\n"
+              "    password: password\n"
+              "    email: test1@test.com\n")
+        result = create_user('Beck', 'password', 'test1@test.com')
+        print("logging in returned: '" + result + "' (should be 'A user with that username already exists')\n\n")
+        self.assertEqual(result, "A user with that username already exists",
+                         "shouldn't work with user with the same username")
+
+        print("\n Making a new account where another individual had a different username:\n"
+              "    username: Beck Jr\n"
+              "    password: password\n"
+              "    email: test1@test.com\n")
+        result = create_user('Beck Jr', 'password', 'test1@test.com')
+        print("logging in returned: '" + result + "' (should be 'Success!')\n\n")
+        self.assertEqual(result, "Success!", "should work as it is unique")
+
+    def test_delete_user(self):
+        """
+        This function will test the deleting of a user
+        """
+        rebuild_tables()
+        load_data()
+
+        print("\n Deleting the user Beck by Ryan R:\n")
+
+        ryan_session_key = login_user('RyanR', 'PabloWeegee69')
+
+        outcome = delete_user(1, ryan_session_key)
+        print("Delete request returned: " + str(outcome) + ". (should be False)")
+        self.assertFalse(outcome, "Ryan shouldn't be able to delete Beck")
+
+        print("\n Deleting the user RyanR by Ryan R:\n")
+        outcome = delete_user(2, ryan_session_key)
+        print("Delete request returned: " + str(outcome) + ". (should be True)")
+        self.assertTrue(outcome, "Ryan should be able to delete himself")
+
+        print("checking if RyanR exists:\n")
+        outcome = get_user_public(2)
+        check_values = {'username': '',
+                        'profile_pic': '',
+                        'bio': '',
+                        'worlds': []}
+        print("Get Request returned: " + json.dumps(outcome) + ". (should be " + json.dumps(check_values) + ')')
+        self.assertEqual(outcome, check_values, "Somehow got values for a deleted user")
+
+    def test_get_user_public(self):
+        """
+        This will test the getting of a user's public info
+        """
+        rebuild_tables()
+        load_data()
+
+        print("Getting a nonexistent user: id = 999")
+        outcome = get_user_public(999)
+        check_values = {'username': '',
+                        'profile_pic': '',
+                        'bio': '',
+                        'worlds': []}
+        print("Get request returned: " + json.dumps(outcome) + ". (should be " + json.dumps(check_values) + ")")
+        self.assertEqual(outcome, check_values, "Should not have gotten info for nonexistent person")
+
+        print("Getting a user Jacob: id = 8")
+        outcome = get_user_public(8)
+        check_values = {'username': 'Jacob',
+                        'profile_pic': None,
+                        'bio': 'Bruh.',
+                        'worlds': [{'id': 6, 'name': 'Real World'}]}
+        print("Get request returned: " + json.dumps(outcome) + ". (should be " + json.dumps(check_values) + ")")
+        self.assertEqual(outcome, check_values, "Should have gotten info for Jacob")
 
     def test_login(self):
         """

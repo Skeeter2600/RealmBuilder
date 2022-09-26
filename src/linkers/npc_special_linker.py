@@ -1,5 +1,6 @@
 from src.utils.db_tools import check_session_key
 from src.utils.db_utils import connect
+from src.utils.permissions import check_editable
 
 
 def rebuild_npc_special_linker():
@@ -81,10 +82,12 @@ def remove_npc_special_association(npc_id, special_id, user_id, session_key):
     return False
 
 
-def get_specials_by_npc(npc_id):
+def get_specials_by_npc(user_id, session_key, npc_id):
     """
     This function will get all specials an NPC
     is associated with
+    :param user_id: the is of the user requesting
+    :param session_key: the user's session key
     :param npc_id: the id of the npc being checked
 
     :return: a list of the specials
@@ -92,17 +95,33 @@ def get_specials_by_npc(npc_id):
     :format return: [{id: special id,
                       name: special name}]
     """
-    conn = connect()
-    cur = conn.cursor()
+    outcome = []
+    if check_session_key(user_id, session_key):
+        conn = connect()
+        cur = conn.cursor()
 
-    npc2_query = """
-            SELECT specials.id, name FROM npc_special_linker
-                INNER JOIN specials ON npc_special_linker.special_id = specials.id
-            WHERE special_id = %s
-            """
-    cur.execute(npc2_query, [npc_id])
-    outcome = cur.fetchall()
-    conn.close()
+        world_id_check = """
+                SELECT world_id FROM npcs
+                WHERE id = %s
+                """
+        cur.execute(world_id_check, [npc_id])
+        world_id = cur.fetchall()[0][0]
+
+        if check_editable(world_id, user_id, session_key):
+            npc2_query = """
+                    SELECT specials.id, name FROM npc_special_linker
+                        INNER JOIN specials ON npc_special_linker.special_id = specials.id
+                    WHERE special_id = %s
+                    """
+        else:
+            npc2_query = """
+                SELECT specials.id, name FROM npc_special_linker
+                    INNER JOIN specials ON npc_special_linker.special_id = specials.id
+                WHERE special_id = %s AND specials.revealed = 't'
+                """
+        cur.execute(npc2_query, [npc_id])
+        outcome = cur.fetchall()
+        conn.close()
 
     return outcome
 

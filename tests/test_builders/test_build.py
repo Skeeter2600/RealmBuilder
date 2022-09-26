@@ -186,27 +186,19 @@ def load_data():
     add_npcs_non_hidden_unrevealed = """
         INSERT INTO npcs(name, age, occupation, description, world_id) VALUES
             ('Margarette Chesteroot', 67, 'Caretaker of the Vine',
-                'Margarete Chesteroot has the title of “Caretaker of the Vine,” something given to the eldest individual
-                    in Charlote. Her main duty is to look after The Vine and make sure of its well being.',
+                'Margarete Chesteroot has the title of “Caretaker of the Vine,” something given to the eldest individual in Charlote. Her main duty is to look after The Vine and make sure of its well being.',
                 1
             ),
             ('Soni Paustel', 22, 'Detective',
-                'Soni is an ace detective who boasts a sharp wit and high level of intelligence. His aptitude for 
-                    solving cases has him named "The Second Advent of the Detective Prince". Despite his popularity, 
-                    Soni is actually quite lonely and yearns for attention and validation. He was abandoned by his 
-                    father amd lost his mother to suicide (which he later claims were the result of him being a 
-                    "cursed child") and never had any genuine friends.',
+                'Soni is an ace detective who boasts a sharp wit and high level of intelligence. His aptitude for solving cases has him named "The Second Advent of the Detective Prince". Despite his popularity, Soni is actually quite lonely and yearns for attention and validation. He was abandoned by his father amd lost his mother to suicide (which he later claims were the result of him being a "cursed child") and never had any genuine friends.',
                 6
             ),
             ('Prometheus', 970, 'Artificer',
-                'Prometheus is a medium robotesk being with a knack for tinkering. Despite his intelligence, he has no 
-                    knowledge of clothes and its reasons.',
+                'Prometheus is a medium robotesk being with a knack for tinkering. Despite his intelligence, he has no knowledge of clothes and its reasons.',
                 4
             ),
             ('Prometheus', 1000, 'Tinkerer',
-                'Prometheus is a medium robotesk being with a knack for tinkering. Despite his intelligence, he has no 
-                    knowledge of clothes and its reasons. He will awkwardly talk about the players clothes with a little
-                    bit of knowledge, but ultimately trail off.',
+                'Prometheus is a medium robotesk being with a knack for tinkering. Despite his intelligence, he has no knowledge of clothes and its reasons. He will awkwardly talk about the players clothes with a little bit of knowledge, but ultimately trail off.',
                 3
             )
         """
@@ -216,21 +208,10 @@ def load_data():
     add_npcs_non_hidden_revealed = """
         INSERT INTO npcs(name, age, occupation, description, world_id, revealed, edit_date) VALUES
             ('Riam Chesteroot', 27, 'Captain',
-                'Riam Chesteroot is a 5’8” tall human weighing in at around 130 lbs. He has long, messy, black hair, 
-                    which is often pushed down and over his left ear. He has a slim face with a small nose and prominent
-                    chin line, as well as two different colored eyes, his left being blue and his right being green. 
-                    Riam often wears darker colored clothes, not out of edginess, but due to not caring about how he 
-                    looks and it often being easier to maintain due to spots being harder to see. When standing around, 
-                    he is often shuffling his deck of cards, a memento from home and what he uses for his spellbook. 
-                    The 3 of spades is missing from this deck. He usually will stay away from the center of action, 
-                    watching and waiting for a perfect time to make a move. Chesteroot just wants to be able to call a 
-                    group of people his “family.” His history of distrust with those who were his family stunt his 
-                    ability to keep others from getting close.',
+                'Riam Chesteroot is a 5’8” tall human weighing in at around 130 lbs. He has long, messy, black hair, which is often pushed down and over his left ear. He has a slim face with a small nose and prominent chin line, as well as two different colored eyes, his left being blue and his right being green. Riam often wears darker colored clothes, not out of edginess, but due to not caring about how he looks and it often being easier to maintain due to spots being harder to see. When standing around, he is often shuffling his deck of cards, a memento from home and what he uses for his spellbook. The 3 of spades is missing from this deck. He usually will stay away from the center of action, watching and waiting for a perfect time to make a move. Chesteroot just wants to be able to call a group of people his “family.” His history of distrust with those who were his family stunt his ability to keep others from getting close.',
                 2, 't', '2020-01-29 13:18:32'),
             ('Prometheus', 9999999, 'Scholar',
-                'Prometheus is a medium robotesk being with a knack for tinkering. Despite his intelligence, he has no 
-                    knowledge of clothes and its reasons. He has been adopted over the past countless years
-                    to become the arch scholar of the area and knows more about what might be going on that anyone esle',
+                'Prometheus is a medium robotesk being with a knack for tinkering. Despite his intelligence, he has no knowledge of clothes and its reasons. He has been adopted over the past countless years to become the arch scholar of the area and knows more about what might be going on that anyone esle',
                 6, 't', '2021-03-04 12:14:52')
         """
     cur.execute(add_npcs_non_hidden_revealed)
@@ -240,23 +221,15 @@ def load_data():
         INSERT INTO npcs(name, age, occupation, description, hidden_description, world_id, 
             revealed, edit_date) VALUES
             ('Thuacc', 26, 'Adventurer',
-                'Thuacc is a half orc paladin with a need for adventure. He is short tempered and straight
-                to the point. What ever way will get to the goal is the right way and any one who stands in the way
-                is only another obstacle in the way of success.',
-                'Thuacc was born with the name Bonc and had a brother named Thuacc. In a battle for their home town,
-                Bonc took advantage of the situation and killed his brother, taking his name and leaving town.',
+                'Thuacc is a half orc paladin with a need for adventure. He is short tempered and straight to the point. What ever way will get to the goal is the right way and any one who stands in the way is only another obstacle in the way of success.',
+                'Thuacc was born with the name Bonc and had a brother named Thuacc. In a battle for their home town, Bonc took advantage of the situation and killed his brother, taking his name and leaving town.',
                 3, 't', '2020-01-18 19:19:19'),
             ('Oliver Quinn', 39, 'Trader', 
-                'Oliver Quinn is a man standing 5''11" with dirty blonde hair. He is married
-                to Susie Quinn and had a son, Robby, who was tragically lost to travelling adventurers', 
-                'Oliver made a deal with Kyneas in order to get his son back and prevent the adventurers from ever
-                killing his son. He went back in time to prevent them from ever becoming adventurers, but was killed
-                due to them denying his reality and doing things how they wanted to.', 
+                'Oliver Quinn is a man standing 5''11" with dirty blonde hair. He is married to Susie Quinn and had a son, Robby, who was tragically lost to travelling adventurers', 
+                'Oliver made a deal with Kyneas in order to get his son back and prevent the adventurers from ever killing his son. He went back in time to prevent them from ever becoming adventurers, but was killed due to them denying his reality and doing things how they wanted to.', 
                 3, 't', '2020-05-12 17:18:22'),
             ('Richard Nixon', 109, 'President of the United States',
-                'Richard Milhous Nixon was the 37th president of the United States, serving from 1969 to 1974. He was 
-                a member of the Republican Party who previously served as a representative and senator from California 
-                and was the 36th vice president from 1953 to 1961', 
+                'Richard Milhous Nixon was the 37th president of the United States, serving from 1969 to 1974. He was a member of the Republican Party who previously served as a representative and senator from California and was the 36th vice president from 1953 to 1961', 
                 'Was responsible for the Watergate Scandal', 
                 6, 't', '1972-06-17 12:54:21')
         """
@@ -266,8 +239,7 @@ def load_data():
     add_npcs_hidden_unrevealed = """
         INSERT INTO npcs(name, age, occupation, description, hidden_description, world_id) VALUES
             ('Evelyn', 28, 'Adventurer', 'Evelyn was a half elf warlock who''s allegiance was to an unknown being ', 
-                'His allegiance was alter revealed to be to Kyneas, and fought against the party, during which he lost
-                his life', 3)
+                'His allegiance was alter revealed to be to Kyneas, and fought against the party, during which he lost his life', 3)
         """
     cur.execute(add_npcs_hidden_unrevealed)
     conn.commit()

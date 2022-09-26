@@ -56,103 +56,122 @@ def add_npc(user_id, session_key, details):
                       associated_specials: [id: special id],
                       }
 
-    :return: True if successful, False if not
+    :return: [created boolean, npc id (-1 if failed)]
     """
     if check_session_key(user_id, session_key):
-        conn = connect()
-        cur = conn.cursor()
+        if check_editable(details['world_id'], user_id, session_key):
+            conn = connect()
+            cur = conn.cursor()
 
-        if details['hidden_description'] == '':
-            add_request = """
-                        INSERT INTO npcs(NAME, AGE, OCCUPATION, DESCRIPTION, hidden_description, WORLD_ID) 
-                        VALUES (%s, %s, %s, %s, %s, %s)
-                        RETURNING id
+            if details['hidden_description'] == '':
+                add_request = """
+                            INSERT INTO npcs(NAME, AGE, OCCUPATION, DESCRIPTION, hidden_description, WORLD_ID) 
+                            VALUES (%s, %s, %s, %s, %s, %s)
+                            RETURNING id
+                            """
+                cur.execute(add_request, (details['name'], details['age'], details['occupation'], details['description'],
+                                          details['hidden_description'], details['world_id']))
+            else:
+                add_request = """
+                    INSERT INTO npcs(NAME, AGE, OCCUPATION, DESCRIPTION, WORLD_ID) 
+                    VALUES (%s, %s, %s, %s, %s)
+                    RETURNING id
+                    """
+                cur.execute(add_request, (details['name'], details['age'], details['occupation'],
+                                          details['description'], details['world_id']))
+
+            npc_id = cur.fetchall()
+
+            if npc_id != ():
+                npc_id = npc_id[0][0]
+
+                if len(details['images']) > 0:
+                    # compile image list to add to npc image linker
+                    image_add_request = """
+                        INSERT INTO npc_image_linker(npc_id, image) VALUES
                         """
-            cur.execute(add_request, (details['name'], details['age'], details['occupation'], details['description'],
-                                      details['hidden_description'], details['world_id']))
-        else:
-            add_request = """
-                INSERT INTO npcs(NAME, AGE, OCCUPATION, DESCRIPTION, WORLD_ID) 
-                VALUES (%s, %s, %s, %s, %s)
-                RETURNING id
-                """
-            cur.execute(add_request, (details['name'], details['age'], details['occupation'],
-                                      details['description'], details['world_id']))
+                    add_values = ''
+                    length = len(details['images'])
+                    i = 0
+                    while i < length-1:
+                        add_values = add_values + '(' + str(npc_id) + ', ' + str(details['images'][i]) + '), '
+                        i += 1
+                    add_values = add_values + '(' + str(npc_id) + ', ' + str(details['images'][i]) + ') '
 
-        npc_id = conn.fetchall()
+                    add_values = add_values + 'returning id'
+                    image_add_request = image_add_request + add_values
 
-        if npc_id != ():
-            npc_id = npc_id[0][0]
+                    cur.execute(image_add_request)
+                    outcome = cur.fetchall()
+                    if outcome == ():
+                        return False
 
-            # compile image list to add to npc image linker
-            image_add_request = """
-                INSERT INTO npc_image_linker(npc_id, image) VALUES
-                """
-            add_values = ''
-            for image in details['images']:
-                add_values = add_values + '(' + npc_id + ', ' + image + '), '
-
-            add_values = add_values + 'returning id'
-            image_add_request = image_add_request + add_values
-
-            cur.execute(image_add_request)
-            outcome = cur.fetchall()
-            if outcome == ():
-                return False
-
-            # compile the city list to add to the linker
-            city_add_request = """
-                INSERT INTO city_npc_linker(city_id, npc_id) VALUES
-                """
-            add_values = ''
-            for city in details['associated_cities']:
-                add_values = add_values + '(' + city + ', ' + npc_id + '), '
-
-            add_values = add_values + 'returning id'
-            city_add_request = city_add_request + add_values
-
-            cur.execute(city_add_request)
-            outcome = cur.fetchall()
-            if outcome == ():
-                return False
-
-            # compile the npc list to add to the npc_npc_linker
-            npc_add_request = """
-                        INSERT INTO npc_npc_linker(npc_1_id, npc_2_id) VALUES
+                # compile the city list to add to the linker
+                if len(details['associated_cities']) > 0:
+                    city_add_request = """
+                        INSERT INTO city_npc_linker(city_id, npc_id) VALUES
                         """
-            add_values = ''
-            for other_npc in details['associated_npcs']:
-                add_values = add_values + '(' + other_npc + ', ' + npc_id + '), '
+                    add_values = ''
+                    length = len(details['associated_cities'])
+                    i = 0
+                    while i < length-1:
+                        add_values = add_values + '(' + str(details['associated_cities'][i]['id']) + ', ' + str(npc_id) + '), '
+                        i += 1
 
-            add_values = add_values + 'returning id'
-            npc_add_request = npc_add_request + add_values
+                    add_values = add_values + '(' + str(details['associated_cities'][i]['id']) + ', ' + str(npc_id) + ') '
+                    add_values = add_values + 'returning id'
+                    city_add_request = city_add_request + add_values
 
-            cur.execute(npc_add_request)
-            outcome = cur.fetchall()
-            if outcome == ():
-                return False
+                    cur.execute(city_add_request)
+                    outcome = cur.fetchall()
+                    if outcome == ():
+                        return False
 
-            # compile the special list to add to the linker
-            special_add_request = """
-                INSERT INTO npc_special_linker(npc_id, special_id) VALUES
-                """
-            add_values = ''
-            for special in details['associated_specials']:
-                add_values = add_values + '(' + npc_id + ', ' + special + '), '
+                # compile the npc list to add to the npc_npc_linker
+                if len(details['associated_npcs']) > 0:
+                    npc_add_request = """
+                                INSERT INTO npc_npc_linker(npc_1_id, npc_2_id) VALUES
+                                """
+                    add_values = ''
+                    length = len(details['associated_npcs'])
+                    i = 0
+                    while i < length-1:
+                        add_values = add_values + '(' + str(details['associated_npcs'][i]['id']) + ', ' + str(npc_id) + '), '
 
-            add_values = add_values + 'returning id'
-            special_add_request = special_add_request + add_values
+                    add_values = add_values + '(' + str(details['associated_npcs'][i]['id']) + ', ' + str(npc_id) + ') '
 
-            cur.execute(special_add_request)
-            outcome = cur.fetchall()
-            if outcome == ():
-                return False
+                    add_values = add_values + 'returning id'
+                    npc_add_request = npc_add_request + add_values
 
-            conn.commit()
-            conn.close()
-            return True
+                    cur.execute(npc_add_request)
+                    outcome = cur.fetchall()
+                    if outcome == ():
+                        return False
 
-    return False
+                # compile the special list to add to the linker
+                if len(details['associated_specials']) > 0:
+                    special_add_request = """
+                        INSERT INTO npc_special_linker(npc_id, special_id) VALUES
+                        """
+                    add_values = ''
+                    length = len(details['associated_specials'])
+                    i = 0
+                    while i < length-1:
+                        add_values = add_values + '(' + str(npc_id) + ', ' + str(details['associated_specials'][i]['id']) + '), '
+
+                    add_values = add_values + '(' + str(npc_id) + ', ' + str(details['associated_specials'][i]['id']) + ') '
+                    add_values = add_values + 'returning id'
+                    special_add_request = special_add_request + add_values
+
+                    cur.execute(special_add_request)
+                    outcome = cur.fetchall()
+                    if outcome == ():
+                        return False
+
+                conn.commit()
+                conn.close()
+                return [True, npc_id]
+    return [False, -1]
 
 
 def copy_npc(user_id, session_key, npc_id, world_id):
@@ -166,7 +185,7 @@ def copy_npc(user_id, session_key, npc_id, world_id):
     :param npc_id: the id of the special
     :param world_id: the id of the world
 
-    :return: the info of the new element if done, {} if failure
+    :return: [created boolean, npc id (-1 if failed)]
     """
     if check_editable(world_id, user_id, session_key):
         conn = connect()
@@ -192,8 +211,8 @@ def copy_npc(user_id, session_key, npc_id, world_id):
         conn.commit()
         conn.close()
         if outcome != ():
-            return get_npc_info(user_id, session_key, outcome, True)
-    return False
+            return [True, new_id]
+    return [False, -1]
 
 
 def delete_npc(user_id, session_key, npc_id, world_id):
@@ -269,7 +288,7 @@ def edit_npc(user_id, session_key, npc_id, world_id, details):
             conn.commit()
             conn.close()
 
-            return get_npc_info(user_id, session_key, npc_id, True)
+            return get_npc_info(npc_id, user_id, session_key, True)
 
     return {}
 
@@ -321,36 +340,38 @@ def get_npc_info(npc_id, user_id, session_key, admin):
             WHERE id = %s
             """
         cur.execute(all_info_query, [npc_id])
-        all_outcome = cur.fetchall()[0]
-        npc_info['name'] = all_outcome[0]
+        all_outcome = cur.fetchall()
+        if len(all_outcome) > 0:
+            all_outcome = all_outcome[0]
+            npc_info['name'] = all_outcome[0]
 
-        npc_info['images'] = get_associated_npc_images(npc_id)
+            npc_info['images'] = get_associated_npc_images(npc_id)
 
-        npc_info['age'] = all_outcome[1]
-        npc_info['occupation'] = all_outcome[2]
-        npc_info['description'] = all_outcome[3]
+            npc_info['age'] = all_outcome[1]
+            npc_info['occupation'] = all_outcome[2]
+            npc_info['description'] = all_outcome[3]
 
-        npc_info['associated_npcs'] = get_associated_npcs(npc_id)
-        npc_info['associated_specials'] = get_specials_by_npc(npc_id)
-        npc_info['associated_cities'] = get_cities_by_npc(npc_id)
+            npc_info['associated_npcs'] = get_associated_npcs(user_id, session_key, npc_id)
+            npc_info['associated_specials'] = get_specials_by_npc(user_id, session_key, npc_id)
+            npc_info['associated_cities'] = get_cities_by_npc(user_id, session_key, npc_id)
 
-        if admin:
-            admin_content = {'hidden_description': '',
-                             'revealed': None,
-                             'edit_date': ''
-                             }
-            admin_query = """
-                SELECT hidden_description, revealed, edit_date FROM npcs
-                WHERE id = %s
-                """
-            cur.execute(admin_query, [npc_id])
-            admin_outcome = cur.fetchall[0]
+            if admin:
+                admin_content = {'hidden_description': '',
+                                 'revealed': None,
+                                 'edit_date': ''
+                                 }
+                admin_query = """
+                    SELECT hidden_description, revealed, edit_date FROM npcs
+                    WHERE id = %s
+                    """
+                cur.execute(admin_query, [npc_id])
+                admin_outcome = cur.fetchall()[0]
 
-            admin_content['hidden_description'] = admin_outcome[0]
-            admin_content['revealed'] = admin_outcome[1]
-            admin_content['edit_date'] = admin_outcome[2]
+                admin_content['hidden_description'] = admin_outcome[0]
+                admin_content['revealed'] = admin_outcome[1]
+                admin_content['edit_date'] = admin_outcome[2]
 
-            npc_info['admin_content'] = admin_content
+                npc_info['admin_content'] = admin_content
 
         conn.close()
 
@@ -384,7 +405,7 @@ def reveal_hidden_npc(user_id, session_key, world_id, npc_id):
         conn.commit()
         conn.close()
         if outcome != ():
-            return get_npc_info(user_id, session_key, npc_id, True)
+            return get_npc_info( npc_id, user_id, session_key, True)
 
     return {}
 
@@ -419,37 +440,32 @@ def search_for_npc(param, world, limit, page, user_id, session_key):
 
         if check_editable(world, user_id, session_key):
             request = """
-                SELECT name, occupation, revealed FROM npcs
+                SELECT id, name, occupation, revealed FROM npcs
                 WHERE name ILIKE %s AND
                     npcs.world_id = %s
                 LIMIT %s OFFSET %s
             """
             cur.execute(request, (param, world, limit, (page - 1) * limit))
             npcs_raw = cur.fetchall()
-            npc_info = {'name': '',
-                        'occupation': '',
-                        'reveal_status': False}
             for npc in npcs_raw:
-                npc_info['name'] = npc[0]
-                npc_info['occupation'] = npc[1]
-                npc_info['reveal_status'] = npc[2]
-                npc_list.append(npc_info)
+                npc_list.append({'id': npc[0],
+                                 'name': npc[1],
+                                 'occupation': npc[2],
+                                 'reveal_status': npc[3]})
 
         else:
             request = """
-                SELECT name, occupation FROM npcs
+                SELECT id, name, occupation FROM npcs
                 WHERE name ILIKE %s AND
                     npcs.world_id = %s AND npcs.revealed = 't'
                 LIMIT %s OFFSET %s
             """
             cur.execute(request, (param, world, limit, (page - 1) * limit))
             npcs_raw = cur.fetchall()
-            npc_info = {'name': '',
-                        'occupation': 0}
             for npc in npcs_raw:
-                npc_info['name'] = npc[0]
-                npc_info['occupation'] = npc[1]
-                npc_list.append(npc_info)
+                npc_list.append({'id': npc[0],
+                                 'name': npc[1],
+                                 'occupation': npc[2]})
 
         conn.close()
 

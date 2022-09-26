@@ -125,7 +125,7 @@ def add_city(user_id, session_key, details):
                 length = len(details['associated_specials'])
                 i = 0
                 while i < length-1:
-                    add_values = add_values + '(' + str(city_id) + ', ' + str(details['associated_npcs'][i]) + '), '
+                    add_values = add_values + '(' + str(city_id) + ', ' + str(details['associated_specials'][i]) + '), '
                     i += 1
 
                 add_values = add_values + '(' + str(city_id) + ', ' + str(details['associated_specials'][i]) + ') '
@@ -439,7 +439,7 @@ def search_for_city(param, world, limit, page, user_id, session_key):
 
         if check_editable(world, user_id, session_key):
             request = """
-            SELECT name, population, revealed FROM cities
+            SELECT id, name, population, revealed FROM cities
             WHERE name ILIKE %s AND
                 cities.world_id = %s
             LIMIT %s OFFSET %s
@@ -447,20 +447,22 @@ def search_for_city(param, world, limit, page, user_id, session_key):
             cur.execute(request, (param, world, limit, (page - 1) * limit))
             cities_raw = cur.fetchall()
             for city in cities_raw:
-                city_list.append({'name': city[0],
-                                  'population': city[1],
-                                  'reveal_status': city[2]})
+                city_list.append({'id': city[0],
+                                  'name': city[1],
+                                  'population': city[2],
+                                  'reveal_status': city[3]})
         else:
             request = """
-                SELECT name, population FROM cities
+                SELECT id, name, population FROM cities
                 WHERE name ILIKE %s AND cities.world_id = %s AND cities.revealed = 't'
                 LIMIT %s OFFSET %s
             """
             cur.execute(request, (param, world, limit, (page - 1) * limit))
             cities_raw = cur.fetchall()
             for city in cities_raw:
-                city_list.append({'name': city[0],
-                                  'population': city[1]})
+                city_list.append({'id': city[0],
+                                  'name': city[1],
+                                  'population': city[2]})
         conn.close()
 
     return city_list

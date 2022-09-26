@@ -50,7 +50,7 @@ class MyTestCase(unittest.TestCase):
                     'associated_npcs': [{'id': 5,
                                         'name': 'Riam Chesteroot'}],
                     'associated_specials': [],
-                    'admin_content': {'edit_date': datetime(2022, 9, 25, 16, 19, 13, 49075),
+                    'admin_content': {'edit_date': '',
                                       'revealed': False}}
 
         # testing getting the city

@@ -167,7 +167,10 @@ def get_specials_by_city(user_id, session_key, city_id):
                 WHERE city_id = %s AND specials.revealed = 't'
                 """
         cur.execute(specials_query, [city_id])
-        outcome = cur.fetchall()
+
+        for special in cur.fetchall():
+            outcome.append(({'id': special[0],
+                             'name': special[1]}))
         conn.close()
 
     return outcome

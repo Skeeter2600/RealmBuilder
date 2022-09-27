@@ -134,10 +134,7 @@ def load_data():
             revealed, edit_date) VALUES
             ('Jamestown', 28712, 'https://www.youtube.com/watch?v=5KiAWfu7cu8', 'Furniture',
                 'Small City Vibes', 
-                    'Jamestown is a city in southern Chautauqua County, New York, United States. 
-                    The population was 28,712 at the 2020 census. Situated between Lake Erie to the north and the 
-                    Allegheny National Forest to the south, Jamestown is the largest population center in the county. 
-                    Nearby Chautauqua Lake is a freshwater resource used by fishermen, boaters, and naturalists.',
+                    'Jamestown is a city in southern Chautauqua County, New York, United States. The population was 28,712 at the 2020 census. Situated between Lake Erie to the north and the Allegheny National Forest to the south, Jamestown is the largest population center in the county. Nearby Chautauqua Lake is a freshwater resource used by fishermen, boaters, and naturalists.',
                 6, 't', '1886-04-19 01:23:45'),
             ('Meridia', 1392, 'https://www.youtube.com/watch?v=ojEyUU2M6z4', 'Farming, Storefronts',
                 'Small town vibes',
@@ -292,7 +289,7 @@ def load_data():
 
     add_specials_non_hidden_revealed = """
         INSERT INTO specials(name, description, world_id, revealed, edit_date) VALUES
-            ('Jamestown Key to the City', 'A city to the city of Jamestown, NY', 6, 't', '1934-12-20 16:15:00'),
+            ('Jamestown Key to the City', 'A key to the city of Jamestown, NY', 6, 't', '1934-12-20 16:15:00'),
             ('Soul Phylactery', 'A large crystal with the souls of countless tortured individuals trapped within',
                 5, 't', '2021-06-19 15:12:22')
         """
@@ -320,9 +317,8 @@ def load_data():
                 Ring of Gender. In addition to the other effect, it also binds with the wearer transforming them into the
                 opposite sex over the course of the next 2 weeks. The effect remains on those of the wearer''s initial gender',
                 3),
-            ('The Golden Candle', 'Hidden in the depth of the Carcer Caverns lies the Golden Candle, worshiped
-                by the countless kobolds that lie within', 'The candle is the prison for the demon Kyneas and will release
-                him if ever extinguished. The kobolds protected it from ever happening, they never worshiped it.', 3)
+            ('The Golden Candle', 'Hidden in the depth of the Carcer Caverns lies the Golden Candle, worshiped by the countless kobolds that lie within', 
+            'The candle is the prison for the demon Kyneas and will release him if ever extinguished. The kobolds protected it from ever happening, they never worshiped it.', 3)
         """
     cur.execute(add_specials_hidden)
     conn.commit()

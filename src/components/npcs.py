@@ -137,6 +137,7 @@ def add_npc(user_id, session_key, details):
                     i = 0
                     while i < length-1:
                         add_values = add_values + '(' + str(details['associated_npcs'][i]['id']) + ', ' + str(npc_id) + '), '
+                        i += 1
 
                     add_values = add_values + '(' + str(details['associated_npcs'][i]['id']) + ', ' + str(npc_id) + ') '
 
@@ -288,12 +289,12 @@ def edit_npc(user_id, session_key, npc_id, world_id, details):
             conn.commit()
             conn.close()
 
-            return get_npc_info(npc_id, user_id, session_key, True)
+            return get_npc_info(user_id, session_key, npc_id, True)
 
     return {}
 
 
-def get_npc_info(npc_id, user_id, session_key, admin):
+def get_npc_info(user_id, session_key, npc_id, admin):
     """
     This function will get the information associated
     with an NPC based on the user's permissions
@@ -339,6 +340,10 @@ def get_npc_info(npc_id, user_id, session_key, admin):
             SELECT name, age, occupation, description FROM npcs
             WHERE id = %s
             """
+
+        if not admin:
+            all_info_query = all_info_query + " AND revealed = 't'"
+
         cur.execute(all_info_query, [npc_id])
         all_outcome = cur.fetchall()
         if len(all_outcome) > 0:
@@ -396,7 +401,8 @@ def reveal_hidden_npc(user_id, session_key, world_id, npc_id):
 
         reveal_query = """
         UPDATE npcs SET
-        description = concat(description, '\n\nREVEAL\n\n', hidden_description)
+        description = concat(description, '\n\nREVEAL\n\n', hidden_description),
+        hidden_description = ''
         WHERE id = %s
         returning id
         """
@@ -405,7 +411,7 @@ def reveal_hidden_npc(user_id, session_key, world_id, npc_id):
         conn.commit()
         conn.close()
         if outcome != ():
-            return get_npc_info( npc_id, user_id, session_key, True)
+            return get_npc_info(user_id, session_key, npc_id, True)
 
     return {}
 

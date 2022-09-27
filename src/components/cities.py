@@ -59,88 +59,128 @@ def add_city(user_id, session_key, details):
     :return: [created boolean, city id (-1 if failed)]
     """
     if check_session_key(user_id, session_key):
+        if check_editable(details['world_id'], user_id, session_key):
+            conn = connect()
+            cur = conn.cursor()
+
+            add_request = """
+                INSERT INTO cities(NAME, POPULATION, SONG, TRADES, AESTHETIC, DESCRIPTION, WORLD_ID) 
+                VALUES (%s, %s, %s, %s, %s, %s, %s)
+                RETURNING id
+                """
+            cur.execute(add_request, (details['name'], details['population'], details['song'], details['trades'],
+                                      details['aesthetic'], details['description'], details['world_id']))
+            city_id = cur.fetchall()
+
+            if city_id != ():
+                city_id = city_id[0][0]
+
+                # compile image list to add to city image linker
+                if len(details['images']) > 0:
+                    image_add_request = """
+                        INSERT INTO city_image_linker(city_id, image) VALUES
+                        """
+                    add_values = ''
+                    length = len(details['images'])
+                    i = 0
+                    while i < length-1:
+                        add_values = add_values + '(' + str(city_id) + ', ' + str(details['images'][i]) + '), '
+                        i += 1
+                    add_values = add_values + '(' + str(city_id) + ', ' + str(details['images'][i]) + ') '
+
+                    add_values = add_values + ' returning id'
+                    image_add_request = image_add_request + add_values
+
+                    cur.execute(image_add_request)
+                    outcome = cur.fetchall()
+                    if outcome == ():
+                        return False
+
+                # compile the npc list to add to the linker
+                if len(details['associated_npcs']) > 0:
+                    npc_add_request = """
+                        INSERT INTO city_npc_linker(city_id, npc_id) VALUES
+                        """
+                    add_values = ''
+                    length = len(details['associated_npcs'])
+                    i = 0
+                    while i < length-1:
+                        add_values = add_values + '(' + str(city_id) + ', ' + str(details['associated_npcs'][i]) + '), '
+                        i += 1
+                    add_values = add_values + '(' + str(city_id) + ', ' + str(details['associated_npcs'][i]) + ') '
+
+                    add_values = add_values + ' returning id'
+                    npc_add_request = npc_add_request + add_values
+
+                    cur.execute(npc_add_request)
+                    outcome = cur.fetchall()
+                    if outcome == ():
+                        return False
+
+                # compile the special list to add to the linker
+                if len(details['associated_specials']) > 0:
+                    special_add_request = """
+                        INSERT INTO city_special_linker(city_id, special_id) VALUES
+                        """
+                    add_values = ''
+                    length = len(details['associated_specials'])
+                    i = 0
+                    while i < length-1:
+                        add_values = add_values + '(' + str(city_id) + ', ' + str(details['associated_specials'][i]) + '), '
+                        i += 1
+
+                    add_values = add_values + '(' + str(city_id) + ', ' + str(details['associated_specials'][i]) + ') '
+
+                    add_values = add_values + ' returning id'
+                    special_add_request = special_add_request + add_values
+
+                    cur.execute(special_add_request)
+                    outcome = cur.fetchall()
+                    if outcome == ():
+                        return False
+
+                conn.commit()
+                conn.close()
+                return [True, city_id]
+    return [False, -1]
+
+
+def copy_city(user_id, session_key, city_id, world_id):
+    """
+    This function will make a copy of a city in
+    the user's specified world
+    :param user_id: the id of the user adding
+    :param session_key: the user's session key
+    :param city_id: the id of the city being copied
+    :param world_id: the id of the world being copied to
+
+    :return: the info of the new element if done, {} if failure
+    """
+    if check_editable(world_id, user_id, session_key):
         conn = connect()
         cur = conn.cursor()
-
-        add_request = """
-            INSERT INTO cities(NAME, POPULATION, SONG, TRADES, AESTHETIC, DESCRIPTION, WORLD_ID) 
-            VALUES (%s, %s, %s, %s, %s, %s, %s)
+        duplicate_request = """
+            INSERT INTO cities(name, population, song, trades, aesthetic, description, world_id)
+            SELECT name, population, song, trades, aesthetic, description, world_id FROM cities
+            WHERE id = %s
             RETURNING id
             """
-        cur.execute(add_request, (details['name'], details['population'], details['song'], details['trades'],
-                                  details['aesthetic'], details['description'], details['world_id']))
-        city_id = cur.fetchall()
+        cur.execute(duplicate_request, [city_id])
+        new_id = cur.fetchall()[0][0]
 
-        if city_id != ():
-            city_id = city_id[0][0]
+        change_world = """
+            UPDATE cities SET
+            world_id = %s
+            WHERE id = %s
+            RETURNING id
+            """
+        cur.execute(change_world, (world_id, new_id))
 
-            # compile image list to add to city image linker
-            if len(details['images']) > 0:
-                image_add_request = """
-                    INSERT INTO city_image_linker(city_id, image) VALUES
-                    """
-                add_values = ''
-                length = len(details['images'])
-                i = 0
-                while i < length-1:
-                    add_values = add_values + '(' + str(city_id) + ', ' + str(details['images'][i]) + '), '
-                    i += 1
-                add_values = add_values + '(' + str(city_id) + ', ' + str(details['images'][i]) + ') '
-
-                add_values = add_values + ' returning id'
-                image_add_request = image_add_request + add_values
-
-                cur.execute(image_add_request)
-                outcome = cur.fetchall()
-                if outcome == ():
-                    return False
-
-            # compile the npc list to add to the linker
-            if len(details['associated_npcs']) > 0:
-                npc_add_request = """
-                    INSERT INTO city_npc_linker(city_id, npc_id) VALUES
-                    """
-                add_values = ''
-                length = len(details['associated_npcs'])
-                i = 0
-                while i < length-1:
-                    add_values = add_values + '(' + str(city_id) + ', ' + str(details['associated_npcs'][i]) + '), '
-                    i += 1
-                add_values = add_values + '(' + str(city_id) + ', ' + str(details['associated_npcs'][i]) + ') '
-
-                add_values = add_values + ' returning id'
-                npc_add_request = npc_add_request + add_values
-
-                cur.execute(npc_add_request)
-                outcome = cur.fetchall()
-                if outcome == ():
-                    return False
-
-            # compile the special list to add to the linker
-            if len(details['associated_specials']) > 0:
-                special_add_request = """
-                    INSERT INTO city_special_linker(city_id, special_id) VALUES
-                    """
-                add_values = ''
-                length = len(details['associated_specials'])
-                i = 0
-                while i < length-1:
-                    add_values = add_values + '(' + str(city_id) + ', ' + str(details['associated_specials'][i]) + '), '
-                    i += 1
-
-                add_values = add_values + '(' + str(city_id) + ', ' + str(details['associated_specials'][i]) + ') '
-
-                add_values = add_values + ' returning id'
-                special_add_request = special_add_request + add_values
-
-                cur.execute(special_add_request)
-                outcome = cur.fetchall()
-                if outcome == ():
-                    return False
-
-            conn.commit()
-            conn.close()
-            return [True, city_id]
+        outcome = cur.fetchall()
+        conn.commit()
+        conn.close()
+        if outcome != ():
+            return [True, new_id]
     return [False, -1]
 
 

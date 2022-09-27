@@ -108,28 +108,32 @@ def get_specials_by_npc(user_id, session_key, npc_id):
         world_id = cur.fetchall()[0][0]
 
         if check_editable(world_id, user_id, session_key):
-            npc2_query = """
+            special_query = """
                     SELECT specials.id, name FROM npc_special_linker
                         INNER JOIN specials ON npc_special_linker.special_id = specials.id
-                    WHERE special_id = %s
+                    WHERE npc_id = %s
                     """
         else:
-            npc2_query = """
+            special_query = """
                 SELECT specials.id, name FROM npc_special_linker
                     INNER JOIN specials ON npc_special_linker.special_id = specials.id
-                WHERE special_id = %s AND specials.revealed = 't'
+                WHERE npc_id = %s AND specials.revealed = 't'
                 """
-        cur.execute(npc2_query, [npc_id])
-        outcome = cur.fetchall()
+        cur.execute(special_query, [npc_id])
+        for npc in cur.fetchall():
+            outcome.append(({'id': npc[0],
+                              'name': npc[1]}))
         conn.close()
 
     return outcome
 
 
-def get_npcs_by_special(special_id):
+def get_npcs_by_special(user_id, session_key, special_id):
     """
     This function will get all of the NPCs associated
     with a special
+    :param user_id: the is of the user requesting
+    :param session_key: the user's session key
     :param special_id: the id of the special being checked
 
     :return: a list of npcs
@@ -137,16 +141,34 @@ def get_npcs_by_special(special_id):
     :format return: [{id: npc id,
                       name: npc name}]
     """
-    conn = connect()
-    cur = conn.cursor()
+    outcome = []
+    if check_session_key(user_id, session_key):
+        conn = connect()
+        cur = conn.cursor()
 
-    npc2_query = """
-            SELECT npcs.id, name FROM npc_special_linker
-                INNER JOIN npcs ON npc_special_linker.npc_id = npcs.id
-            WHERE npc_id = %s
+        world_id_check = """
+            SELECT world_id FROM specials
+            WHERE id = %s
             """
-    cur.execute(npc2_query, [special_id])
-    outcome = cur.fetchall()
-    conn.close()
+        cur.execute(world_id_check, [special_id])
+        world_id = cur.fetchall()[0][0]
+
+        if check_editable(world_id, user_id, session_key):
+            npc_query = """
+                SELECT npcs.id, name FROM npc_special_linker
+                    INNER JOIN npcs ON npc_special_linker.npc_id = npcs.id
+                WHERE special_id = %s
+                """
+        else:
+            npc_query = """
+                SELECT npcs.id, name FROM npc_special_linker
+                    INNER JOIN npcs ON npc_special_linker.npc_id = npcs.id
+                WHERE special_id = %s AND npcs.revealed = 't'
+                """
+        cur.execute(npc_query, [special_id])
+        for npc in cur.fetchall():
+            outcome.append(({'id': npc[0],
+                             'name': npc[1]}))
+        conn.close()
 
     return outcome

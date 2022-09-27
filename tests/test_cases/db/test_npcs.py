@@ -28,7 +28,7 @@ class MyTestCase(unittest.TestCase):
                    'description': 'Fat, but determined',
                    'hidden_description': '',
                    'associated_cities': [{'id': 6}],
-                   'associated_npcs': [{'id': 5}],
+                   'associated_npcs': [ {'id': 5}],
                    'associated_specials': []
                    }
 
@@ -51,7 +51,7 @@ class MyTestCase(unittest.TestCase):
                     'admin_content': {'hidden_description': '',
                                       'revealed': False}
                     }
-        outcome = get_npc_info(npc_id, 3, ryan_c_session_key, True)
+        outcome = get_npc_info(3, ryan_c_session_key, npc_id, True)
         self.assertEqual(expected['name'], outcome['name'], "did not get the npc properly")
         self.assertEqual(expected['images'], outcome['images'], "did not get the npc properly")
         self.assertEqual(expected['age'], outcome['age'], "did not get the npc properly")
@@ -96,7 +96,7 @@ class MyTestCase(unittest.TestCase):
         outcome = copy_npc(3, ryan_c_session_key, 7, 2)
         self.assertTrue(outcome[0], "Should have been successful")
 
-        outcome = get_npc_info(outcome[1], 3, ryan_c_session_key, True)
+        outcome = get_npc_info(3, ryan_c_session_key, outcome[1], True)
         self.assertEqual(success_expected['name'], outcome['name'], "did not get the npc properly")
         self.assertEqual(success_expected['images'], outcome['images'], "did not get the npc properly")
         self.assertEqual(success_expected['age'], outcome['age'], "did not get the npc properly")
@@ -140,7 +140,7 @@ class MyTestCase(unittest.TestCase):
                     'associated_cities': [],
                     'admin_content': {}}
 
-        info = get_npc_info(9, 2, ryan_r_session_key, True)
+        info = get_npc_info(2, ryan_r_session_key, 9, True)
         self.assertEqual(info, expected, "Should not have gotten info for an npc that doesn't exist")
 
     def test_edit_npc(self):
@@ -167,7 +167,7 @@ class MyTestCase(unittest.TestCase):
         outcome = edit_npc(2, ryan_r_session_key, 9, 6, details)
         self.assertTrue(outcome, "Ryan R should be able to edit Richard Nixon in The Real World")
 
-        outcome = get_npc_info(9, 2, ryan_r_session_key, True)
+        outcome = get_npc_info(2, ryan_r_session_key, 9, True)
         self.assertEqual(details['name'], outcome['name'], "did not get the npc properly")
         self.assertEqual(details['age'], outcome['age'], "did not get the npc properly")
         self.assertEqual(details['occupation'], outcome['occupation'], "did not get the npc properly")
@@ -202,7 +202,7 @@ class MyTestCase(unittest.TestCase):
         self.assertEqual(expected_values['description'], outcome['description'],
                          'should have been able to reveal content')
 
-        user_check = get_npc_info(7, 2, ryan_r_session_key, False)
+        user_check = get_npc_info(2, ryan_r_session_key, 7, False)
         self.assertEqual(expected_values['description'], user_check['description'],
                          'should have been able to reveal content')
 

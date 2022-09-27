@@ -20,7 +20,7 @@ class MyTestCase(unittest.TestCase):
         ryan_r_session_key = login_user('RyanR', 'PabloWeegee69')
         ryan_c_session_key = login_user('RyanC', 'ThuaccTwumps')
 
-        details = {'world_id': 3,
+        details = {'world_id': 2,
                    'name': 'Test',
                    'images': [],
                    'population': 123,
@@ -33,7 +33,7 @@ class MyTestCase(unittest.TestCase):
 
         # testing making a new city
         outcome = add_city(2, ryan_r_session_key, details)
-        self.assertTrue(outcome[0], "created city when is should not have")
+        self.assertFalse(outcome[0], "created city when is should not have")
 
         outcome = add_city(3, ryan_c_session_key, details)
         self.assertTrue(outcome[0], "did not create city properly")
@@ -48,7 +48,7 @@ class MyTestCase(unittest.TestCase):
                     'aesthetic': 'test',
                     'description': 'test',
                     'associated_npcs': [{'id': 5,
-                                        'name': 'Riam Chesteroot'}],
+                                         'name': 'Riam Chesteroot'}],
                     'associated_specials': [],
                     'admin_content': {'edit_date': '',
                                       'revealed': False}}
@@ -87,6 +87,55 @@ class MyTestCase(unittest.TestCase):
         # test each field is right for as an admin
         # (done this way due to timestamp in the creation changing each time)
         self.assertEqual('', outcome['name'], "City has not been revealed, so should not be visible")
+
+    def test_copy_city(self):
+        """
+        This function will test copying a city to
+        a new world
+        """
+        rebuild_tables()
+        load_data()
+
+        ryan_r_session_key = login_user('RyanR', 'PabloWeegee69')
+        ryan_c_session_key = login_user('RyanC', 'ThuaccTwumps')
+
+        success_expected = {'name': 'Jamestown',
+                            'images': [],
+                            'population': 28712,
+                            'song': 'https://www.youtube.com/watch?v=5KiAWfu7cu8',
+                            'trades': 'Furniture',
+                            'aesthetic': 'Small City Vibes',
+                            'description': 'Jamestown is a city in southern Chautauqua County, New York, United States. ' + \
+                                           'The population was 28,712 at the 2020 census. Situated between Lake Erie to the north and the ' + \
+                                           'Allegheny National Forest to the south, Jamestown is the largest population center in the county. ' + \
+                                           'Nearby Chautauqua Lake is a freshwater resource used by fishermen, boaters, and naturalists.',
+                            'associated_npcs': [],
+                            'associated_specials': [],
+                            'admin_content': {
+                                'revealed': True,
+                                'edit_date': ''
+                                }
+                            }
+
+        outcome = copy_city(2, ryan_r_session_key, 4, 2)[0]
+        self.assertFalse(outcome, "Should not have been successful")
+
+        outcome = copy_city(3, ryan_c_session_key, 4, 2)
+        self.assertTrue(outcome[0], "Should have been successful")
+
+        outcome = get_city(3, ryan_c_session_key, 4, True)
+        self.assertEqual(success_expected['name'], outcome['name'], "did not get the city properly")
+        self.assertEqual(success_expected['images'], outcome['images'], "did not get the city properly")
+        self.assertEqual(success_expected['population'], outcome['population'], "did not get the city properly")
+        self.assertEqual(success_expected['song'], outcome['song'], "did not get the city properly")
+        self.assertEqual(success_expected['trades'], outcome['trades'], "did not get the city properly")
+        self.assertEqual(success_expected['aesthetic'], outcome['aesthetic'], "did not get the city properly")
+        self.assertEqual(success_expected['description'], outcome['description'], "did not get the city properly")
+        self.assertEqual(success_expected['associated_npcs'], outcome['associated_npcs'], "did not get the city properly")
+        self.assertEqual(success_expected['associated_specials'],
+                         outcome['associated_specials'], "did not get the city properly")
+        self.assertEqual(success_expected['admin_content']['revealed'],
+                         outcome['admin_content']['revealed'], "did not get the city properly")
 
     def test_delete_city(self):
         """
@@ -203,13 +252,13 @@ class MyTestCase(unittest.TestCase):
 
         # searching for cities with the string 'Meridia' as an admin, expecting 2 results
         outcome = search_for_city('Meridia', 3, None, 1, 1, beck_session_key)
-        self.assertEqual([{'name': 'New Meridia', 'population': 10392, 'reveal_status': False},
-                          {'name': 'Meridia', 'population': 1392, 'reveal_status': True}],
+        self.assertEqual([{'id': 1, 'name': 'New Meridia', 'population': 10392, 'reveal_status': False},
+                          {'id': 5, 'name': 'Meridia', 'population': 1392, 'reveal_status': True}],
                          outcome, "not the right cities")
 
         # searching for cities with the string 'Meridia' as a user, expecting 1 result
         outcome = search_for_city('Meridia', 3, None, 1, 4, charles_session_key)
-        self.assertEqual([{'name': 'Meridia', 'population': 1392}], outcome, "not the right cities")
+        self.assertEqual([{'id': 5, 'name': 'Meridia', 'population': 1392}], outcome, "not the right cities")
 
         outcome = search_for_city('e', 3, None, 1, 1, beck_session_key)
         self.assertEqual(len(outcome), 3, "not the right number of cities")

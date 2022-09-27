@@ -50,7 +50,7 @@ def add_special(user_id, session_key, details):
                       associated_npcs: [id: npc id],
                       }
 
-    :return: True if successful, False if not
+    :return: [created boolean, city id (-1 if failed)]
     """
     if check_editable(details['world_id'], user_id, session_key):
         conn = connect()
@@ -72,64 +72,75 @@ def add_special(user_id, session_key, details):
                 """
             cur.execute(add_request, (details['name'], details['description'], details['world_id']))
 
-        special_id = conn.fetchall()
+        special_id = cur.fetchall()
 
         if special_id != ():
             special_id = special_id[0][0]
 
+            if len(details['images']) > 0:
             # compile image list to add to special image linker
-            image_add_request = """
-                INSERT INTO special_image_linker(special_id, image) VALUES
-                """
-            add_values = ''
-            for image in details['images']:
-                add_values = add_values + '(' + special_id + ', ' + image + '), '
+                image_add_request = """
+                    INSERT INTO special_image_linker(special_id, image) VALUES
+                    """
+                add_values = ''
+                length = len(details['images'])
+                i = 0
+                while i < length - 1:
+                    add_values = add_values + '(' + str(special_id) + ', ' + str(details['images'][i]) + '), '
+                    i += 1
+                add_values = add_values + '(' + str(special_id) + ', ' + str(details['images'][i]) + ') '
+                add_values = add_values + 'returning id'
+                image_add_request = image_add_request + add_values
 
-            add_values = add_values + 'returning id'
-            image_add_request = image_add_request + add_values
+                cur.execute(image_add_request)
+                outcome = cur.fetchall()
+                if outcome == ():
+                    return False
 
-            cur.execute(image_add_request)
-            outcome = cur.fetchall()
-            if outcome == ():
-                return False
+            if len(details['associated_cities']) > 0:
+                # compile the city list to add to the linker
+                city_add_request = """
+                    INSERT INTO city_special_linker(city_id, special_id) VALUES
+                    """
+                add_values = ''
+                length = len(details['associated_cities'])
+                i = 0
+                while i < length - 1:
+                    add_values = add_values + '(' + str(details['associated_cities'][i]['id']) + ', ' + str(special_id) + '), '
+                    i += 1
+                add_values = add_values + '(' + str(details['associated_cities'][i]['id']) + ', ' + str(special_id) + ') '
+                add_values = add_values + 'returning id'
+                city_add_request = city_add_request + add_values
 
-            # compile the city list to add to the linker
-            city_add_request = """
-                INSERT INTO city_special_linker(city_id, special_id) VALUES
-                """
-            add_values = ''
-            for city in details['associated_cities']:
-                add_values = add_values + '(' + city + ', ' + special_id + '), '
+                cur.execute(city_add_request)
+                outcome = cur.fetchall()
+                if outcome == ():
+                    return False
 
-            add_values = add_values + 'returning id'
-            city_add_request = city_add_request + add_values
+            if len(details['associated_npcs']) > 0:
+                # compile the npc list to add to the linker
+                npc_add_request = """
+                    INSERT INTO npc_special_linker(npc_id, special_id) VALUES
+                    """
+                add_values = ''
+                length = len(details['associated_npcs'])
+                i = 0
+                while i < length - 1:
+                    add_values = add_values + '(' + str(details['associated_npcs'][i]['id']) + ', ' + str(special_id) + '), '
+                    i += 1
+                add_values = add_values + '(' + str(details['associated_npcs'][i]['id']) + ', ' + str(special_id) + ') '
+                add_values = add_values + 'returning id'
+                npc_add_request = npc_add_request + add_values
 
-            cur.execute(city_add_request)
-            outcome = cur.fetchall()
-            if outcome == ():
-                return False
-
-            # compile the npc list to add to the linker
-            npc_add_request = """
-                INSERT INTO npc_special_linker(npc_id, special_id) VALUES
-                """
-            add_values = ''
-            for npc in details['associated_specials']:
-                add_values = add_values + '(' + npc + ', ' + special_id + '), '
-
-            add_values = add_values + 'returning id'
-            npc_add_request = npc_add_request + add_values
-
-            cur.execute(npc_add_request)
-            outcome = cur.fetchall()
-            if outcome == ():
-                return False
+                cur.execute(npc_add_request)
+                outcome = cur.fetchall()
+                if outcome == ():
+                    return False
 
             conn.commit()
             conn.close()
-            return True
-
-    return False
+            return [True, special_id]
+    return [False, -1]
 
 
 def copy_special(user_id, session_key, special_id, world_id):
@@ -169,8 +180,8 @@ def copy_special(user_id, session_key, special_id, world_id):
         conn.commit()
         conn.close()
         if outcome != ():
-            return get_special_info(user_id, session_key, outcome, True)
-    return False
+            return [True, new_id]
+    return [False, -1]
 
 
 def delete_special(user_id, session_key, special_id, world_id):
@@ -184,22 +195,23 @@ def delete_special(user_id, session_key, special_id, world_id):
 
     :return: True if deleted, False if not
     """
-    if check_editable(world_id, user_id, session_key):
-        conn = connect()
-        cur = conn.cursor()
+    if check_session_key(user_id, session_key):
+        if check_editable(world_id, user_id, session_key):
+            conn = connect()
+            cur = conn.cursor()
 
-        delete_request = """
-            DELETE FROM specials
-            WHERE id = %s
-            returning id
-        """
-        cur.execute(delete_request, [special_id])
-        outcome = cur.fetchall()
-        conn.commit()
-        conn.close()
+            delete_request = """
+                DELETE FROM specials
+                WHERE id = %s
+                returning id
+            """
+            cur.execute(delete_request, [special_id])
+            outcome = cur.fetchall()
+            conn.commit()
+            conn.close()
 
-        if outcome != ():
-            return True
+            if outcome != ():
+                return True
     return False
 
 
@@ -216,34 +228,39 @@ def edit_special(user_id, session_key, special_id, world_id, details):
 
     :format details: { name: special name,
                        description: special description,
+                       hidden_description: special hidden description
                        revealed: T or F,
                      }
 
     :return: the updated special info, {} if failure
     """
-    if check_editable(world_id, user_id, session_key):
-        conn = connect()
-        cur = conn.cursor()
+    if check_session_key(user_id, session_key):
+        if check_editable(world_id, user_id, session_key):
+            conn = connect()
+            cur = conn.cursor()
 
-        edit_request = """
-            UPDATE specials SET
-            name = %s, description = %s, revealed = %s, edit_date = now()
-            WHERE id = %s
-            RETURNING id
-            """
-        cur.execute(edit_request, (details['name'], details['description'], details['revealed'], special_id))
-        outcome = cur.fetchall()
+            edit_request = """
+                UPDATE specials SET
+                name = %s, description = %s, revealed = %s, hidden_description = %s, edit_date = now()
+                WHERE id = %s
+                RETURNING id
+                """
+            cur.execute(edit_request, (details['name'], details['description'], details['revealed'], details['hidden_description'], special_id))
+            outcome = cur.fetchall()
 
-        if outcome == ():
+            if outcome == ():
+                conn.close()
+                return {}
+
+            conn.commit()
             conn.close()
-            return {}
 
-        conn.commit()
-        conn.close()
+            return get_special_info(user_id, session_key, special_id, True)
 
-        return get_special_info(user_id, session_key, special_id, True)
-
-    return {}
+    return {'name': '',
+            'description': '',
+            'hidden_description': '',
+            'revealed': False}
 
 
 def get_special_info(user_id, session_key, special_id, admin):
@@ -285,34 +302,40 @@ def get_special_info(user_id, session_key, special_id, admin):
             SELECT name, description FROM specials
             WHERE id = %s
             """
+
+        if not admin:
+            all_info_query = all_info_query + " AND revealed = 't'"
+
         cur.execute(all_info_query, [special_id])
-        all_outcome = cur.fetchall()[0]
-        special_info['name'] = all_outcome[0]
+        all_outcome = cur.fetchall()
+        if len(all_outcome) > 0:
+            all_outcome = all_outcome[0]
+            special_info['name'] = all_outcome[0]
 
-        special_info['images'] = get_associated_special_images(special_id)
+            special_info['images'] = get_associated_special_images(special_id)
 
-        special_info['description'] = all_outcome[1]
+            special_info['description'] = all_outcome[1]
 
-        special_info['associated_npcs'] = get_npcs_by_special(special_id)
-        special_info['associated_cities'] = get_cities_by_special(special_id)
+            special_info['associated_npcs'] = get_npcs_by_special(user_id, session_key, special_id)
+            special_info['associated_cities'] = get_cities_by_special(user_id, session_key, special_id)
 
-        if admin:
-            admin_content = {'hidden_description': '',
-                             'revealed': None,
-                             'edit_date': ''
-                             }
-            admin_query = """
-                SELECT hidden_description, revealed, edit_date FROM specials
-                WHERE id = %s
-                """
-            cur.execute(admin_query, [special_id])
-            admin_outcome = cur.fetchall[0]
+            if admin:
+                admin_content = {'hidden_description': '',
+                                 'revealed': None,
+                                 'edit_date': ''
+                                 }
+                admin_query = """
+                    SELECT hidden_description, revealed, edit_date FROM specials
+                    WHERE id = %s
+                    """
+                cur.execute(admin_query, [special_id])
+                admin_outcome = cur.fetchall()[0]
 
-            admin_content['hidden_description'] = admin_outcome[0]
-            admin_content['revealed'] = admin_outcome[1]
-            admin_content['edit_date'] = admin_outcome[2]
+                admin_content['hidden_description'] = admin_outcome[0]
+                admin_content['revealed'] = admin_outcome[1]
+                admin_content['edit_date'] = admin_outcome[2]
 
-            special_info['admin_content'] = admin_content
+                special_info['admin_content'] = admin_content
 
         conn.close()
 
@@ -337,7 +360,8 @@ def reveal_hidden_special(user_id, session_key, world_id, special_id):
 
         reveal_query = """
         UPDATE specials SET
-        description = concat(description, '\n\nREVEAL\n\n', hidden_description)
+        description = concat(description, '\n\nREVEAL\n\n', hidden_description),
+        hidden_description = ''
         WHERE id = %s
         returning id
         """
@@ -369,7 +393,7 @@ def search_for_special(param, world, limit, page, user_id, session_key):
     :format return: [{ name: special name,
                        reveal_status: revealed(if admin)}]
     """
-    npc_list = []
+    special_list = []
     if check_session_key(user_id, session_key):
         conn = connect()
         cur = conn.cursor()
@@ -381,35 +405,31 @@ def search_for_special(param, world, limit, page, user_id, session_key):
 
         if check_editable(world, user_id, session_key):
             request = """
-                SELECT name, revealed FROM specials
+                SELECT id, name, revealed FROM specials
                 WHERE name ILIKE %s AND
                     specials.world_id = %s
                 LIMIT %s OFFSET %s
             """
             cur.execute(request, (param, world, limit, (page - 1) * limit))
             specials_raw = cur.fetchall()
-            special_info = {'name': '',
-                            'reveal_status': False}
             for special in specials_raw:
-                special_info['name'] = special[0]
-                special_info['reveal_status'] = special[2]
-                npc_list.append(special_info)
+                special_list.append({'id': special[0],
+                                     'name': special[1],
+                                     'reveal_status': special[2]})
 
         else:
             request = """
-                SELECT name FROM specials
+                SELECT id, name FROM specials
                 WHERE name ILIKE %s AND
                     specials.world_id = %s AND specials.revealed = 't'
                 LIMIT %s OFFSET %s
             """
             cur.execute(request, (param, world, limit, (page - 1) * limit))
             specials_raw = cur.fetchall()
-            special_info = {'name': ''}
             for special in specials_raw:
-                special_info['name'] = special[0]
-                npc_list.append(special_info)
-
+                special_list.append({'id': special[0],
+                                     'name': special[1]})
         conn.close()
 
-    return npc_list
+    return special_list
 

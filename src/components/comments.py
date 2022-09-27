@@ -15,7 +15,7 @@ def rebuild_comments_table():
     create_sql = """
         CREATE TABLE comments(
             id                  SERIAL PRIMARY KEY,
-            user_id             TEXT NOT NULL,
+            user_id             INTEGER NOT NULL,
             comment             TEXT NOT NULL,
             time                TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
             likes               INTEGER DEFAULT 0,
@@ -31,13 +31,14 @@ def rebuild_comments_table():
     conn.close()
 
 
-def add_comment(user_id, session_key, comment, component_id, component_type):
+def add_comment(user_id, session_key, world_id, component_id, component_type, comment, ):
     """
     This function will be called when a user makes
     a comment on a component
 
     :param user_id: the id of the user commenting
     :param session_key: the session key of the user
+    :param world_id: the id of the world the comment is in
     :param comment: the comment being made
     :param component_id: the id of the item being commented on
     :param component_type: the table name of the element being commented on
@@ -48,17 +49,17 @@ def add_comment(user_id, session_key, comment, component_id, component_type):
         conn = connect()
         cur = conn.cursor()
         insert_request = """
-            INSERT INTO comments(user_id, comment, component_id, component_type) VALUES
-            (%s, %s, %s, %s)
+            INSERT INTO comments(user_id, comment, world_id, component_id, component_type) VALUES
+            (%s, %s, %s, %s, %s)
             RETURNING id
                     """
-        cur.execute(insert_request, (user_id, comment, component_id, component_type))
+        cur.execute(insert_request, (user_id, comment, world_id, component_id, component_type))
         outcome = cur.fetchall()
         conn.commit()
         conn.close()
         if outcome != ():
-            return True
-    return False
+            return [True, outcome[0][0]]
+    return [False, -1]
 
 
 def delete_comment(user_id, session_key, comment_id):
@@ -79,8 +80,9 @@ def delete_comment(user_id, session_key, comment_id):
             WHERE component_id = %s
             """
         cur.execute(user_check, [comment_id])
-        outcome = cur.fetchall()[0]
-        if outcome:
+        outcome = cur.fetchall()
+        if outcome != []:
+            outcome = outcome[0]
             if check_editable(outcome[1], user_id, session_key) or outcome[0] == user_id:
                 delete_request = """
                     DELETE FROM comments WHERE
@@ -94,6 +96,49 @@ def delete_comment(user_id, session_key, comment_id):
                     conn.close()
                     return True
     return False
+
+
+def get_comment(comment_id):
+    """
+    This function will get the info related to a comment
+
+    :param comment_id: the id of the component with the comments
+
+    :return: info on the comment
+
+    :format return: { user: { user_id: user's id,
+                              user_name: user's name,
+                              profile_picture: user's profile picture},
+                      comment: the comment,
+                      time: the time stamp of the comment
+                      likes: int of likes,
+                      dislikes: int of dislikes
+                    }
+    """
+    conn = connect()
+    cur = conn.cursor()
+
+    comment_request = """
+            SELECT users.id, users.username, users.profile_pic, comment, time, likes, dislikes FROM comments
+                INNER JOIN users ON comments.user_id = users.id
+            WHERE comments.id = %s
+            """
+    cur.execute(comment_request, [comment_id])
+    results = cur.fetchall()
+    conn.close()
+
+    if results != ():
+        results = results[0]
+        values = {'user': {'user_id': results[0],
+                         'user_name': results[1],
+                         'profile_pic': results[2]},
+                'comment': results[3],
+                'time': results[4],
+                'likes': results[5],
+                'dislikes': results[6]
+                }
+        return values
+    return {}
 
 
 def get_component_comments(component_id, component_table):
@@ -131,12 +176,12 @@ def get_component_comments(component_id, component_table):
     data = []
     for comment in results:
         data.append({
-            'user':   {'user_id':     comment[0],
-                       'user_name':   comment[1],
-                       'profile_pic': comment[2]},
-            'comment':  comment[3],
-            'time':     comment[4],
-            'likes':    comment[5],
+            'user': {'user_id': comment[0],
+                     'user_name': comment[1],
+                     'profile_pic': comment[2]},
+            'comment': comment[3],
+            'time': comment[4],
+            'likes': comment[5],
             'dislikes': comment[6]
         })
     return data

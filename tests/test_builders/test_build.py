@@ -18,23 +18,23 @@ def load_data():
     # Jacob:   MarkFellowsRulez
 
     add_users = """
-        INSERT INTO users(username, password, email, bio) VALUES 
+        INSERT INTO users(username, password, public, email, bio) VALUES 
             ('Beck', '6bdb83aeccb26b1f038953bc2b140f4ef1aadd4313413f3496b2f6fac84f0696f5dff73d3dd7a23663262c874757242449f6abbdb6190352c16eb383943846e9',
-                'skeeter26@gmail.com', 'Okay buddy!'),
+                TRUE, 'skeeter26@gmail.com', 'Okay buddy!'),
             ('RyanR', '4648a2fe2a26ae6b199d72cab221ed85640ede7bd107579e6a1956ce95aaafd61e5867f8c3d4ad9ba465e145e66c030db88e41a1555239161570d799e39ad5e1', 
-                'carpet_s@yahoo.com', 'Huh?'),
+                FALSE, 'carpet_s@yahoo.com', 'Huh?'),
             ('RyanC', 'c9f0792a65687739f20b95d00e1fd948a7426be26d581027b8ea6102e0209a8687c225b4c3634da8274a8f81589acff6161d5e8ac5fdec0f4742f4005a8b920f',
-                'KabumJr@gmail.com', 'Greetings.'),
+                FALSE, 'KabumJr@gmail.com', 'Greetings.'),
             ('Charles', '0057e1db257e769b47aa441679714abc8e49c303168e0352fb42ddfd334caa7c046178133463ecf2dfbf4ccab159464c6a6a1d89f6791b92e0a488eafd487150',
-                'Chazam@yahoo.com', 'HUH!?!'),
+                TRUE, 'Chazam@yahoo.com', 'HUH!?!'),
             ('Nolan', '07e611ce413b6ba6593c43ee55505abffd8aa6565b9946c12498369428b1c91c13b079f648f4bc5f5507d4ac1b27b670d6032d0d720bdbcae59f9fc377f7f298',
-                'pugalicious@gmail.com', 'Howdy!'),
+                TRUE, 'pugalicious@gmail.com', 'Howdy!'),
             ('Taylor', 'e2ccce9bc27ac9f86b7d610f88b7138906b5c2f1ed66be4e76ef1f67698080610fae6ed5b06c3911f3a3c769860808ed0264be1e96eb7c3ef2d59d615107095b',
-                'biggwatt@gmail.com', 'Are you kidding me?'),
+                TRUE, 'biggwatt@gmail.com', 'Are you kidding me?'),
             ('Josh', 'a3a47eb80147656bc1842d1c124880f73ee8fc029304853cc84591c41f2d585f1be0e551404b2d68e40ac9cc6cc795d93a08b89f69bdc5b7b54e57738c51ed6d', 
-                'JoshyBigMac@aol.com', '*Laughs*'),
+                FALSE, 'JoshyBigMac@aol.com', '*Laughs*'),
             ('Jacob', 'b696bed74199f2d07ec58a7c12bdb6c58f680200eadb06ab687e94c1b762f5e7056bd0a62e869e399bd003d930905d84e38cddf7f900e2db7433883e9aee501a', 
-                'gumbo2600@gmail.com', 'Bruh.')
+                TRUE, 'gumbo2600@gmail.com', 'Bruh.')
         """
 
     cur.execute(add_users)
@@ -75,12 +75,14 @@ def load_data():
         (3, 4, '2019-11-17 10:09:08'),
         (3, 5, '2019-11-17 07:06:05'),
         (3, 6, '2019-11-17 04:03:02'),
+        (4, 1, '2018-06-14 10:12:13'),
         (4, 2, '2018-06-14 11:12:13'),
         (4, 3, '2018-06-14 14:15:16'),
         (4, 4, '2018-06-14 17:18:19'),
         (4, 5, '2018-06-14 20:21:22'),
         (5, 3, '2021-04-12 13:22:45'),
         (5, 4, '2021-04-13 19:11:15'),
+        (5, 5, '2021-04-13 20:11:15'),
         (6, 1, CURRENT_TIMESTAMP),
         (6, 2, CURRENT_TIMESTAMP),
         (6, 3, CURRENT_TIMESTAMP),

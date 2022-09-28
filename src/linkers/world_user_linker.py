@@ -129,13 +129,18 @@ def get_new_elements(world_id, user_id, session_key):
                 """
 
             cur.execute(time_requests, (world_id, user_id))
-            outcome = cur.fetchall()[0]
-            last_checked = datetime.strptime(outcome[0], '%y/%m/%d %H:%M:%S')
-            new_check = datetime.strptime(outcome[1], '%y/%m/%d %H:%M:%S')
+            outcome = cur.fetchall()
+            if outcome:
+                outcome = outcome[0]
+                last_checked = outcome[0]
+                new_check = outcome[1]
 
-            # update times if last checked is older than 15 min
-            if last_checked > datetime.now() - timedelta(minutes=15):
-                new_check = last_checked
+                # update times if last checked is older than 15 min
+                if last_checked > datetime.now() - timedelta(minutes=15):
+                    new_check = last_checked
+                    last_checked = datetime.now()
+            else:
+                new_check = datetime.now()
                 last_checked = datetime.now()
 
             elements = {'npcs': [],
@@ -144,32 +149,32 @@ def get_new_elements(world_id, user_id, session_key):
 
             npc_query = """
                 SELECT id, name FROM npcs
-                WHERE edit_date > %s
+                WHERE edit_date > %s AND world_id = %s
                 """
-            cur.execute(npc_query, [outcome[1]])
+            cur.execute(npc_query, (last_checked, world_id))
             elements['npcs'] = cur.fetchall()
 
             cities_query = """
                 SELECT id, name FROM cities
-                WHERE edit_date > %s
+                WHERE edit_date > %s AND world_id = %s
                 """
-            cur.execute(cities_query, [outcome[1]])
+            cur.execute(cities_query, (last_checked, world_id))
             elements['cities'] = cur.fetchall()
 
             specials_query = """
                 SELECT id, name FROM npcs
-                WHERE edit_date > %s
+                WHERE edit_date > %s AND world_id = %s
                 """
-            cur.execute(specials_query, [outcome[1]])
+            cur.execute(specials_query, (last_checked, world_id))
             elements['specials'] = cur.fetchall()
 
             update_query = """
                 UPDATE world_user_linker
                 SET last_checked = %s, new_check = %s
-                WHERE id = %s
+                WHERE world_id = %s AND user_id = %s
                 """
-            cur.execute(update_query, (last_checked.strftime('%y/%m/%d %H:%M:%S'),
-                                       new_check.strftime('%y/%m/%d %H:%M:%S'), outcome[2]))
+            cur.execute(update_query, (last_checked.strftime('%Y-%m-%d %H:%M:%S'),
+                                       new_check.strftime('%Y-%m-%d %H:%M:%S'), world_id, user_id))
             conn.commit()
             conn.close()
 

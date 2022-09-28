@@ -20,6 +20,7 @@ def rebuild_users_table():
             username        TEXT NOT NULL,
             password        TEXT NOT NULL,
             profile_pic     bytea DEFAULT NULL,
+            public          BOOLEAN DEFAULT FALSE,
             bio             TEXT,
             email           TEXT NOT NULL,
             session_key     TEXT
@@ -126,6 +127,47 @@ def delete_user(user_id, session_key):
             if outcome != ():
                 return True
 
+    return False
+
+
+def edit_account(user_id, session_key, details):
+    """
+    This function will edit a user's information
+    given they are the user requesting it
+
+    :param user_id: the user's id
+    :param session_key: the user's session key
+    :param details: the information to change
+
+    :format details: { username: new username,
+                       profile_pic: new profile picture,
+                       public: True or False,
+                       bio: new bio
+                     }
+
+    :return: True if successful, False if not
+    """
+    if check_session_key(user_id, session_key):
+        conn = connect()
+        cur = conn.cursor()
+
+        edit_query = """
+            UPDATE users SET
+            username = %s, profile_pic = %s, public = %s, bio = %s
+            WHERE id = %s
+            RETURNING id
+            """
+
+        cur.execute(edit_query, (details['username'], details['profile_pic'], details['public'], details['bio'], user_id))
+        outcome = cur.fetchall()
+
+        if outcome != ():
+            conn.commit()
+            conn.close()
+
+            return True
+
+        conn.close()
     return False
 
 
@@ -242,3 +284,47 @@ def logout_user(user_id, session_key):
 
         return "signed out"
     return "bad request"
+
+
+def search_user(param, limit, page, user_id, session_key):
+    """
+    This function will search for users that have the
+    searched string in them
+
+    :param param: the string to search for
+    :param limit: the number of results to show
+    :param page: the selection of users to show
+    :param user_id: the id of the user requesting
+    :param session_key: the session key of the user requesting
+
+    :return: the list of users and their elements that
+        meet the search requirements in json format
+
+    :format return: [{ id: user_id
+                       username: user's username}]
+    """
+    user_list = []
+    if check_session_key(user_id, session_key):
+        conn = connect()
+        cur = conn.cursor()
+
+        if limit is None:
+            limit = 25
+
+        param = '%' + param + '%'
+
+        request = """
+            SELECT id, username FROM users
+            WHERE username ILIKE %s AND
+                users.public = 't' AND users.id != %s
+             LIMIT %s OFFSET %s
+                    """
+        cur.execute(request, (param, limit, user_id, (page - 1) * limit))
+        users_raw = cur.fetchall()
+        for user in users_raw:
+            user_list.append({'id': user[0],
+                             'username': user[1]})
+
+        conn.close()
+
+    return user_list

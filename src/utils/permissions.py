@@ -18,37 +18,44 @@ def check_viewable(world_id, user_id):
         SELECT owner_id, public FROM worlds
         WHERE id = %s
         """
-    values = cur.execute(world_info_request, [world_id])
-    owner_id = values[0][0]
-    public = values[0][1]
-    # if user not the owner or the world is private
-    if owner_id != user_id or not public:
+    cur.execute(world_info_request, [world_id])
+    outcome = cur.fetchall()
+    if outcome:
+        values = outcome[0]
+        owner_id = values[0]
+        public = values[1]
+        # if user not the owner or the world is private
+        if owner_id != user_id and not public:
 
-        user_request = """
-                    SELECT EXISTS(
-                            SELECT 1 FROM world_user_linker
-                            WHERE user_id = %s AND world_id = %s
-                        )
-                    """
-        cur.execute(user_request, (user_id, world_id))
-        # if user is not in the list of users
-        if not cur.fetchall():
-            admin_request = """
-                            SELECT EXISTS(
-                                SELECT 1 FROM admins
+            user_request = """
+                        SELECT EXISTS(
+                                SELECT 1 FROM world_user_linker
                                 WHERE user_id = %s AND world_id = %s
                             )
-                            """
-            cur.execute(admin_request, (user_id, world_id))
-            outcome = cur.fetchall()
+                        """
+            cur.execute(user_request, (user_id, world_id))
+            outcome = cur.fetchall()[0][0]
+            # if user is not in the list of users
+            if not outcome:
+                admin_request = """
+                                SELECT EXISTS(
+                                    SELECT 1 FROM admins
+                                    WHERE user_id = %s AND world_id = %s
+                                )
+                                """
+                cur.execute(admin_request, (user_id, world_id))
+                outcome = cur.fetchall()[0][0]
+                conn.close()
+                # if user is an admin
+                return outcome
             conn.close()
-            # if user is an admin
-            return outcome
+            return True
+        # user is owner or it is pub
         conn.close()
         return True
-    # user is owner
+    # bad world
     conn.close()
-    return True
+    return False
 
 
 def check_editable(world_id, user_id, session_key):

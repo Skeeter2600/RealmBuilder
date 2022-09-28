@@ -431,7 +431,8 @@ def search_for_npc(param, world, limit, page, user_id, session_key):
     :return: the list of npcs and their elements that
         meet the search requirements in json format
 
-    :format return: [{ name: npc name,
+    :format return: [{ id: npc's id,
+                       name: npc name,
                        reveal_status: revealed(if admin)}]
     """
     npc_list = []

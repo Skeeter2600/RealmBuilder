@@ -18,7 +18,7 @@ def rebuild_worlds_table():
         CREATE TABLE worlds(
             id              SERIAL PRIMARY KEY,
             name            TEXT NOT NULL,
-            description     TEXT NOT NULL,
+            description     TEXT DEFAULT '',
             owner_id        INTEGER NOT NULL REFERENCES users ON DELETE CASCADE,
             public          BOOLEAN NOT NULL DEFAULT 'f'
         )
@@ -29,35 +29,39 @@ def rebuild_worlds_table():
     conn.close()
 
 
-def add_world(name, owner_id):
+def add_world(name, owner_id, session_key):
     """
     This function will add a world to the database
     :param name: The name of the world
     :param owner_id: the id of the user who made the world
+    :param session_key: the supposed session key of the user
 
-    :return: the id of the new world if successful, False if not
+    :return: [created boolean, city id (-1 if failed)]
     """
-    conn = connect()
-    cur = conn.cursor()
+    if check_session_key(owner_id, session_key):
+        conn = connect()
+        cur = conn.cursor()
 
-    request = """
-                INSERT INTO worlds(name, owner_id) VALUES
+        request = """
+                    INSERT INTO worlds(name, owner_id) VALUES
+                    (%s, %s)
+                    RETURNING id
+                    """
+        cur.execute(request, (name, owner_id))
+        outcome = cur.fetchall()
+        if outcome != ():
+            insert_request = """
+                INSERT INTO world_user_linker(world_id, user_id) VALUES
                 (%s, %s)
                 RETURNING id
                 """
-    cur.execute(request, (name, owner_id))
-    outcome = cur.fetchall()
-    conn.commit()
-    conn.close()
-    if outcome != ():
-        insert_request = """
-            INSERT INTO world_user_linker(world_id, user_id) VALUES
-            (%s, %s)
-            RETURNING id
-            """
-        cur.execute(insert_request, (outcome[0][0], owner_id))
-        return outcome[0][0]
-    return False
+            cur.execute(insert_request, (outcome[0][0], owner_id))
+
+            conn.commit()
+            conn.close()
+
+            return [True, outcome[0][0]]
+    return [False, -1]
 
 
 def delete_world(world_id, owner_id, session_key):
@@ -72,23 +76,24 @@ def delete_world(world_id, owner_id, session_key):
     """
 
     if check_session_key(owner_id, session_key):
-        conn = connect()
-        cur = conn.cursor()
+        if get_owner(world_id)['id'] == owner_id:
+            conn = connect()
+            cur = conn.cursor()
 
-        delete_request = """
-            DELETE FROM worlds
-            WHERE id = %s
-            RETURNING id
-            """
-        cur.execute(delete_request, [world_id])
-        outcome = cur.fetchall()
+            delete_request = """
+                DELETE FROM worlds
+                WHERE id = %s
+                RETURNING id
+                """
+            cur.execute(delete_request, [world_id])
+            outcome = cur.fetchall()
 
-        conn.commit()
-        conn.close()
+            conn.commit()
+            conn.close()
 
-        # if the delete was successful
-        if len(outcome) > 0:
-            return True
+            # if the delete was successful
+            if len(outcome) > 0:
+                return True
     return False
 
 
@@ -125,7 +130,7 @@ def edit_world(world_id, user_id, session_key, elements):
     return False
 
 
-def join_world(world_id, user_id, session_key):
+def join_world_public(world_id, user_id, session_key):
     """
     This function will allow a user to join a world
 
@@ -142,13 +147,13 @@ def join_world(world_id, user_id, session_key):
         world_check_query = """
             SELECT EXISTS(
                 SELECT 1 FROM worlds
-                WHERE id = %s
+                WHERE id = %s  AND public = 't'
             )
             """
-        cur.execute(world_check_query)
+        cur.execute(world_check_query, [world_id])
         outcome = cur.fetchall()
 
-        if outcome:
+        if outcome[0][0]:
             add_query = """
                 INSERT INTO world_user_linker(world_id, user_id) VALUES 
                 (%s, %s)
@@ -163,6 +168,46 @@ def join_world(world_id, user_id, session_key):
     return False
 
 
+def join_world_private(world_id, user_id, admin_id, session_key):
+    """
+    This function will allow a user to join a world
+
+    :param world_id: the id of the world
+    :param user_id: the id of the user
+    :param admin_id: the id of the admin
+    :param session_key: the session_key of the user
+
+    :return: True if successful, False if not
+    """
+    conn = connect()
+    cur = conn.cursor()
+
+    if check_session_key(admin_id, session_key):
+        if check_editable(world_id, admin_id, session_key):
+            world_check_query = """
+                SELECT EXISTS(
+                    SELECT 1 FROM worlds
+                    WHERE id = %s
+                )
+                """
+            cur.execute(world_check_query, [world_id])
+            outcome = cur.fetchall()
+
+            if outcome[0][0]:
+                add_query = """
+                    INSERT INTO world_user_linker(world_id, user_id) VALUES 
+                    (%s, %s)
+                    returning id
+                    """
+                cur.execute(add_query, (world_id, user_id))
+                outcome = cur.fetchall()
+                if outcome != ():
+                    conn.commit()
+                    conn.close()
+                    return True
+    return False
+
+
 def get_owner(world_id):
     """
     This will get the info on the owner of the world
@@ -173,34 +218,38 @@ def get_owner(world_id):
     :format return:
             {  id:   user id,
                name: user's name,
-               profile_picture: user's profile picture
+               profile_pic: user's profile picture
             }
     """
     conn = connect()
     cur = conn.cursor()
     owner_request = """
-                SELECT users.id, users.name, users.profile_pic FROM worlds
-                    INNER JOIN users ON users.id = worlds.owner_id = users.id
+                SELECT users.id, users.username, users.profile_pic FROM worlds
+                    INNER JOIN users ON worlds.owner_id = users.id
                 WHERE worlds.id = %s
                 """
     cur.execute(owner_request, [world_id])
     outcome = cur.fetchall()
     conn.close()
 
-    info = {
-        "id": outcome[0][0],
-        "name": outcome[0][1],
-        "profile_picture": outcome[0][2]
-    }
+    if outcome:
+        return {
+            "id": outcome[0][0],
+            "name": outcome[0][1],
+            "profile_pic": outcome[0][2]}
+    return {
+            "id": '',
+            "name": '',
+            "profile_pic": ''}
 
-    return info
 
-
-def get_world_user_list(world_id):
+def get_world_user_list(world_id, user_id, session_key):
     """
     This function will get a list of all users who
     are a part of a world
     :param world_id: the id of the world being checked
+    :param user_id: the id of the user requesting the edit
+    :param session_key: the session key of the user
 
     :return: a list of the users in a world
 
@@ -210,45 +259,40 @@ def get_world_user_list(world_id):
                 profile_picture: user's profile picture
             }]
     """
-    conn = connect()
-    cur = conn.cursor()
+    if check_session_key(user_id, session_key):
+        if check_viewable(world_id, user_id):
+            conn = connect()
+            cur = conn.cursor()
 
-    user_list = []
+            user_list = []
 
-    # add the owner to the list
-    owner_request = """
-            SELECT users.id, users.name, users.profile_pic FROM worlds
-                INNER JOIN users ON users.id = worlds.owner_id = users.id
-            WHERE worlds.id = %s
-            """
-    cur.execute(owner_request, [world_id])
-    outcome = cur.fetchall()
-    user_list.append(outcome[0])
+            # add the admins to the list
+            admin_request = """
+                    SELECT users.id, users.username, users.profile_pic FROM admins
+                        INNER JOIN users ON admins.user_id = users.id
+                    WHERE world_id = %s
+                    """
+            cur.execute(admin_request, [world_id])
+            outcome = cur.fetchall()
+            for admin in outcome:
+                user_list.append(admin)
 
-    # add the admins to the list
-    admin_request = """
-            SELECT users.id, users.name, users.profile_pic FROM admins
-                INNER JOIN users ON users.id = admins.user_id = users.id
-            WHERE world_id = %s
-            """
-    cur.execute(admin_request, [world_id])
-    outcome = cur.fetchall()
-    for admin in outcome:
-        user_list.append(admin)
+            # add the members to the list
+            member_request = """
+                SELECT users.id, users.username, users.profile_pic FROM world_user_linker
+                    INNER JOIN users ON world_user_linker.user_id = users.id
+                WHERE world_id = %s
+                """
+            cur.execute(member_request, [world_id])
+            outcome = cur.fetchall()
+            for user in outcome:
+                user_list.append({'id': user[0],
+                                  'username': user[1],
+                                  'profile_picture': user[2]})
 
-    # add the members to the list
-    member_request = """
-        SELECT users.id, users.name, users.profile_pic FROM world_user_linker
-            INNER JOIN users ON users.id = world_user_linker.user_id = users.id
-        WHERE world_id = %s
-        """
-    cur.execute(member_request, [world_id])
-    outcome = cur.fetchall()
-    for user in outcome:
-        user_list.append(user)
-
-    conn.close()
-    return user_list
+            conn.close()
+            return user_list
+    return []
 
 
 def get_world_details(world_id, user_id, session_key):
@@ -267,12 +311,12 @@ def get_world_details(world_id, user_id, session_key):
             { valid: able to view details,
               name: world name,
               description: world description,
-              new_npcs:     [{ id: npc id,
-                               name: npc name}],
-              new_cities:   [{ id: city id,
-                               name: city name}],
-              new_specials: [{ id: special id,
-                               name: special name}],
+              npcs:     [{ id: npc id,
+                           name: npc name}],
+              cities:   [{ id: city id,
+                           name: city name}],
+              specials: [{ id: special id,
+                           name: special name}],
               comments:     [{ user: { user_id: user's id,
                                        user_name: user's name,
                                        profile_picture: user's profile picture},
@@ -282,7 +326,7 @@ def get_world_details(world_id, user_id, session_key):
                               dislikes: int of dislikes
                             }]
               user_list:    [{ id: user id,
-                               name: user's name,
+                               username: user's name,
                                profile_picture: user's profile picture}]
             }
     """
@@ -294,9 +338,9 @@ def get_world_details(world_id, user_id, session_key):
                 'valid': True,
                 'name': '',
                 'description': '',
-                'new_npcs': [],
-                'new_cities': [],
-                'new_specials': [],
+                'npcs': [],
+                'cities': [],
+                'specials': [],
                 'comments': [],
                 'user_list': []
             }
@@ -309,26 +353,75 @@ def get_world_details(world_id, user_id, session_key):
 
             conn.close()
 
-            world_info['name'] = outcome[0][0]
-            world_info['description'] = outcome[0][1]
+            if outcome:
 
-            new_info = get_new_elements(world_id, user_id, session_key)
-            world_info['new_npcs'] = new_info['npcs']
-            world_info['new_cities'] = new_info['cities']
-            world_info['new_specials'] = new_info['specials']
+                world_info['name'] = outcome[0][0]
+                world_info['description'] = outcome[0][1]
 
-            world_info['comments'] = get_component_comments(world_id, 'worlds')
-            world_info['user_list'] = get_world_user_list(world_id)
+                new_info = get_new_elements(world_id, user_id, session_key)
+                world_info['npcs'] = new_info['npcs']
+                world_info['cities'] = new_info['cities']
+                world_info['specials'] = new_info['specials']
 
-            return world_info
+                world_info['comments'] = get_component_comments(world_id, 'worlds')
+                world_info['user_list'] = get_world_user_list(world_id, user_id, session_key)
 
-    else:
-        return {'valid': False,
-                'name': '',
-                'description': '',
-                'new_npcs': [],
-                'new_cities': [],
-                'new_specials': [],
-                'comments': [],
-                'user_list': []
-                }
+                return world_info
+
+    return {'valid': False,
+            'name': '',
+            'description': '',
+            'npcs': [],
+            'cities': [],
+            'specials': [],
+            'comments': [],
+            'user_list': []
+            }
+
+
+def search_world(param, limit, page, user_id, session_key):
+    """
+    This function will search for worlds that have the
+    searched string in them
+
+    :param param: the string to search for
+    :param limit: the number of results to show
+    :param page: the selection of worlds to show
+    :param user_id: the id of the world requesting
+    :param session_key: the session key of the world requesting
+
+    :return: the list of worlds and their elements that
+        meet the search requirements in json format
+
+    :format return: [{ id: world_id
+                       name: world's name}]
+    """
+    world_list = []
+    if check_session_key(user_id, session_key):
+        conn = connect()
+        cur = conn.cursor()
+
+        if limit is None:
+            limit = 25
+
+        param = '%' + param + '%'
+
+        request = """
+            SELECT worlds.id, worlds.name FROM world_user_linker
+                INNER JOIN worlds on worlds.id = world_user_linker.world_id
+            WHERE name ILIKE %s AND
+                (worlds.public = 't' OR world_user_linker.user_id = %s)
+            LIMIT %s OFFSET %s
+                    """
+        cur.execute(request, (param, user_id, limit, (page - 1) * limit))
+        worlds_raw = cur.fetchall()
+        for world in worlds_raw:
+            temp = {'id': world[0],
+                    'name': world[1]}
+            if temp not in world_list:
+                world_list.append({'id': world[0],
+                                   'name': world[1]})
+
+        conn.close()
+
+    return world_list

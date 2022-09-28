@@ -62,6 +62,36 @@ class MyTestCase(unittest.TestCase):
         print("Get Request returned: " + json.dumps(outcome) + ". (should be " + json.dumps(check_values) + ')')
         self.assertEqual(outcome, check_values, "Somehow got values for a deleted user")
 
+    def test_edit_user(self):
+        """
+        This function will test the editing of a user
+        """
+        rebuild_tables()
+        load_data()
+
+        ryan_session_key = login_user('RyanR', 'PabloWeegee69')
+
+        details = {'username': 'Ryan2',
+                   'profile_pic': None,
+                   'public': True,
+                   'bio': 'Testing'}
+
+        outcome = edit_account(1, ryan_session_key, details)
+        self.assertFalse(outcome, "Ryan shouldn't be able to edit Beck")
+
+        outcome = edit_account(2, ryan_session_key, details)
+        self.assertTrue(outcome, "Ryan should be able to edit himself")
+
+        check_values = {'username': 'Ryan2',
+                        'profile_pic': None,
+                        'bio': 'Testing',
+                        'worlds': 'not testing this'}
+
+        outcome = get_user_public(2)
+        self.assertEqual(check_values['username'], outcome['username'], 'Should have gotten Ryan2 as the username')
+        self.assertEqual(check_values['profile_pic'], outcome['profile_pic'], 'Should have gotten None as the profile pic')
+        self.assertEqual(check_values['bio'], outcome['bio'], "Should have gotten 'Testing' as the bio")
+
     def test_get_user_public(self):
         """
         This will test the getting of a user's public info
@@ -232,6 +262,24 @@ class MyTestCase(unittest.TestCase):
               "        Josh Results:   " + str(josh_result) + " (should be False)\n\n")
         self.assertFalse(taylor_result, "should not have been the proper session key for Taylor")
         self.assertFalse(josh_result, "should not have been the proper session key for Josh")
+
+    def test_search_users(self):
+        """
+        This function will test the searching
+        for users
+        """
+        rebuild_tables()
+        load_data()
+
+        # log in two users
+        taylor_key = login_user('Taylor', 'TomathyPickles123')
+        josh_key = login_user('Josh', 'ShadowWatcher58')
+
+        outcome = search_user('o', None, 1, 7, josh_key)
+        self.assertEqual(3, len(outcome), "Should have gotten the other 3 users with o in their usernames")
+
+        outcome = search_user('o', None, 1, 6, taylor_key)
+        self.assertEqual(3, len(outcome), "Should have gotten the 3 users with o in their usernames and are public")
 
 
 if __name__ == '__main__':

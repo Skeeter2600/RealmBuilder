@@ -17,8 +17,8 @@ class MyTestCase(unittest.TestCase):
         rebuild_tables()
         load_data()
 
-        ryan_r_session_key = login_user('RyanR', 'PabloWeegee69')
-        ryan_c_session_key = login_user('RyanC', 'ThuaccTwumps')
+        ryan_r_info = login_user('RyanR', 'PabloWeegee69')
+        ryan_c_info = login_user('RyanC', 'ThuaccTwumps')
 
         details = {'world_id': 2,
                    'name': 'Paul Blart',
@@ -32,10 +32,10 @@ class MyTestCase(unittest.TestCase):
                    'associated_specials': []
                    }
 
-        outcome = add_npc(2, ryan_r_session_key, details)[0]
+        outcome = add_npc(ryan_r_info[1], ryan_r_info[0], details)[0]
         self.assertFalse(outcome, "Should not have been able to add npc")
 
-        outcome = add_npc(3, ryan_c_session_key, details)
+        outcome = add_npc(ryan_c_info[1], ryan_c_info[0], details)
         self.assertTrue(outcome[0], "Should have been able to add npc")
 
         npc_id = outcome[1]
@@ -51,7 +51,7 @@ class MyTestCase(unittest.TestCase):
                     'admin_content': {'hidden_description': '',
                                       'revealed': False}
                     }
-        outcome = get_npc_info(3, ryan_c_session_key, npc_id, True)
+        outcome = get_npc_info(ryan_c_info[1], ryan_c_info[0], npc_id, True)
         self.assertEqual(expected['name'], outcome['name'], "did not get the npc properly")
         self.assertEqual(expected['images'], outcome['images'], "did not get the npc properly")
         self.assertEqual(expected['age'], outcome['age'], "did not get the npc properly")
@@ -74,8 +74,8 @@ class MyTestCase(unittest.TestCase):
         rebuild_tables()
         load_data()
 
-        ryan_r_session_key = login_user('RyanR', 'PabloWeegee69')
-        ryan_c_session_key = login_user('RyanC', 'ThuaccTwumps')
+        ryan_r_info = login_user('RyanR', 'PabloWeegee69')
+        ryan_c_info = login_user('RyanC', 'ThuaccTwumps')
 
         success_expected = {'name': 'Thuacc',
                             'age': 26,
@@ -90,13 +90,13 @@ class MyTestCase(unittest.TestCase):
                                               'edit_date': ''
                                               }}
 
-        outcome = copy_npc(2, ryan_r_session_key, 7, 2)[0]
+        outcome = copy_npc(ryan_r_info[1], ryan_r_info[0], 7, 2)[0]
         self.assertFalse(outcome, "Should not have been successful")
 
-        outcome = copy_npc(3, ryan_c_session_key, 7, 2)
+        outcome = copy_npc(ryan_c_info[1], ryan_c_info[0], 7, 2)
         self.assertTrue(outcome[0], "Should have been successful")
 
-        outcome = get_npc_info(3, ryan_c_session_key, outcome[1], True)
+        outcome = get_npc_info(ryan_c_info[1], ryan_c_info[0], outcome[1], True)
         self.assertEqual(success_expected['name'], outcome['name'], "did not get the npc properly")
         self.assertEqual(success_expected['images'], outcome['images'], "did not get the npc properly")
         self.assertEqual(success_expected['age'], outcome['age'], "did not get the npc properly")
@@ -121,13 +121,13 @@ class MyTestCase(unittest.TestCase):
         rebuild_tables()
         load_data()
 
-        ryan_r_session_key = login_user('RyanR', 'PabloWeegee69')
-        ryan_c_session_key = login_user('RyanC', 'ThuaccTwumps')
+        ryan_r_info = login_user('RyanR', 'PabloWeegee69')
+        ryan_c_info = login_user('RyanC', 'ThuaccTwumps')
 
-        outcome = delete_npc(3, ryan_c_session_key, 9, 6)
+        outcome = delete_npc(ryan_c_info[1], ryan_c_info[0], 9, 6)
         self.assertFalse(outcome, "Ryan C should not have been able to delete Richard Nixon")
 
-        outcome = delete_npc(2, ryan_r_session_key, 9, 6)
+        outcome = delete_npc(ryan_r_info[1], ryan_r_info[0], 9, 6)
         self.assertTrue(outcome, "Ryan R should have been able to delete Richard Nixon")
 
         expected = {'name': '',
@@ -140,7 +140,7 @@ class MyTestCase(unittest.TestCase):
                     'associated_cities': [],
                     'admin_content': {}}
 
-        info = get_npc_info(2, ryan_r_session_key, 9, True)
+        info = get_npc_info(ryan_r_info[1], ryan_r_info[0], 9, True)
         self.assertEqual(info, expected, "Should not have gotten info for an npc that doesn't exist")
 
     def test_edit_npc(self):
@@ -151,8 +151,8 @@ class MyTestCase(unittest.TestCase):
         rebuild_tables()
         load_data()
 
-        ryan_r_session_key = login_user('RyanR', 'PabloWeegee69')
-        ryan_c_session_key = login_user('RyanC', 'ThuaccTwumps')
+        ryan_r_info = login_user('RyanR', 'PabloWeegee69')
+        ryan_c_info = login_user('RyanC', 'ThuaccTwumps')
 
         details = {'name': 'Nixonator',
                    'age': 123456,
@@ -161,13 +161,13 @@ class MyTestCase(unittest.TestCase):
                    'revealed': True
                    }
 
-        outcome = edit_npc(3, ryan_c_session_key, 9, 6, details)
+        outcome = edit_npc(ryan_c_info[1], ryan_c_info[0], 9, 6, details)
         self.assertFalse(outcome, "Ryan C should not be able to edit Richard Nixon in The Real World")
 
-        outcome = edit_npc(2, ryan_r_session_key, 9, 6, details)
+        outcome = edit_npc(ryan_r_info[1], ryan_r_info[0], 9, 6, details)
         self.assertTrue(outcome, "Ryan R should be able to edit Richard Nixon in The Real World")
 
-        outcome = get_npc_info(2, ryan_r_session_key, 9, True)
+        outcome = get_npc_info(ryan_r_info[1], ryan_r_info[0], 9, True)
         self.assertEqual(details['name'], outcome['name'], "did not get the npc properly")
         self.assertEqual(details['age'], outcome['age'], "did not get the npc properly")
         self.assertEqual(details['occupation'], outcome['occupation'], "did not get the npc properly")
@@ -182,8 +182,8 @@ class MyTestCase(unittest.TestCase):
         rebuild_tables()
         load_data()
 
-        ryan_r_session_key = login_user('RyanR', 'PabloWeegee69')
-        beck_session_key = login_user('Beck', 'RiamChesteroot26')
+        ryan_r_info = login_user('RyanR', 'PabloWeegee69')
+        beck_info = login_user('Beck', 'RiamChesteroot26')
 
         expected_values = {'name': 'Thuacc',
                            'age': 26,
@@ -191,10 +191,10 @@ class MyTestCase(unittest.TestCase):
                            'description': 'Thuacc is a half orc paladin with a need for adventure. He is short tempered and straight to the point. What ever way will get to the goal is the right way and any one who stands in the way is only another obstacle in the way of success.' + \
                                           '\n\nREVEAL\n\nThuacc was born with the name Bonc and had a brother named Thuacc. In a battle for their home town, Bonc took advantage of the situation and killed his brother, taking his name and leaving town.',
                            }
-        outcome = reveal_hidden_npc(2, ryan_r_session_key, 3, 7)
+        outcome = reveal_hidden_npc(ryan_r_info[1], ryan_r_info[0], 3, 7)
         self.assertEqual({}, outcome, 'should not have been able to reveal content')
 
-        outcome = reveal_hidden_npc(1, beck_session_key, 3, 7)
+        outcome = reveal_hidden_npc(beck_info[1], beck_info[0], 3, 7)
         self.assertEqual(expected_values['name'], outcome['name'], 'should have been able to reveal content')
         self.assertEqual(expected_values['age'], outcome['age'], 'should have been able to reveal content')
         self.assertEqual(expected_values['occupation'], outcome['occupation'],
@@ -202,7 +202,7 @@ class MyTestCase(unittest.TestCase):
         self.assertEqual(expected_values['description'], outcome['description'],
                          'should have been able to reveal content')
 
-        user_check = get_npc_info(2, ryan_r_session_key, 7, False)
+        user_check = get_npc_info(ryan_r_info[1], ryan_r_info[0], 7, False)
         self.assertEqual(expected_values['description'], user_check['description'],
                          'should have been able to reveal content')
 
@@ -214,8 +214,8 @@ class MyTestCase(unittest.TestCase):
         rebuild_tables()
         load_data()
 
-        beck_session_key = login_user('Beck', 'RiamChesteroot26')
-        taylor_session_key = login_user('Taylor', 'TomathyPickles123')
+        beck_info = login_user('Beck', 'RiamChesteroot26')
+        taylor_info = login_user('Taylor', 'TomathyPickles123')
 
         beck_e_expected = [{'id': 4,
                             'occupation': 'Tinkerer',
@@ -234,13 +234,13 @@ class MyTestCase(unittest.TestCase):
                               'occupation': 'Trader',
                               'name': 'Oliver Quinn'}]
 
-        outcome = search_for_npc('e', 3, None, 1, 1, beck_session_key)
+        outcome = search_for_npc('e', 3, None, 1, beck_info[1], beck_info[0])
         self.assertEqual(outcome, beck_e_expected, "Didn't get the right NPCs")
 
-        outcome = search_for_npc('e', 3, None, 1, 6, taylor_session_key)
+        outcome = search_for_npc('e', 3, None, 1, taylor_info[1], taylor_info[0])
         self.assertEqual(outcome, taylor_e_expected, "Didn't get the right NPCs")
 
-        edit_npc(1, beck_session_key, 4, 3, {'name': 'Prometheus',
+        edit_npc(beck_info[1], beck_info[0], 4, 3, {'name': 'Prometheus',
                                              'age': 1000,
                                              'occupation': 'Tinkerer',
                                              'description': 'Prometheus is a medium robotesk being with a knack for tinkering. Despite his intelligence, he has no knowledge of clothes and its reasons. He will awkwardly talk about the players clothes with a little bit of knowledge, but ultimately trail off.',
@@ -254,7 +254,7 @@ class MyTestCase(unittest.TestCase):
                               'occupation': 'Tinkerer',
                               'name': 'Prometheus'}]
 
-        outcome = search_for_npc('e', 3, None, 1, 6, taylor_session_key)
+        outcome = search_for_npc('e', 3, None, 1, taylor_info[1], taylor_info[0])
         self.assertEqual(outcome, taylor_e_expected, "Didn't get the right NPCs")
 
 

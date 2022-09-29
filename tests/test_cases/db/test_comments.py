@@ -15,9 +15,9 @@ class MyTestCase(unittest.TestCase):
         rebuild_tables()
         load_data()
 
-        ryan_r_session_key = login_user('RyanR', 'PabloWeegee69')
+        ryan_r_info = login_user('RyanR', 'PabloWeegee69')
 
-        outcome = add_comment(2, ryan_r_session_key, 1, 1, 'npc', "testing")
+        outcome = add_comment(ryan_r_info[1], ryan_r_info[0], 1, 1, 'npc', "testing")
         self.assertTrue(outcome[0], "Comment should have been able to be made")
 
         outcome = get_comment(outcome[1])
@@ -31,11 +31,11 @@ class MyTestCase(unittest.TestCase):
         rebuild_tables()
         load_data()
 
-        ryan_r_session_key = login_user('RyanR', 'PabloWeegee69')
-        ryan_c_session_key = login_user('RyanC', 'ThuaccTwumps')
-        beck_session_key = login_user('Beck', 'RiamChesteroot26')
+        ryan_r_info = login_user('RyanR', 'PabloWeegee69')
+        ryan_c_info = login_user('RyanC', 'ThuaccTwumps')
+        beck_info = login_user('Beck', 'RiamChesteroot26')
 
-        outcome = add_comment(2, ryan_r_session_key, 1, 1, 'npcs', "testing")
+        outcome = add_comment(ryan_r_info[1], ryan_r_info[0], 1, 1, 'npcs', "testing")
         self.assertTrue(outcome[0], "Comment should have been able to be made")
 
         comment_id = outcome[1]
@@ -43,18 +43,18 @@ class MyTestCase(unittest.TestCase):
         outcome = get_comment(comment_id)
         self.assertEqual(outcome['comment'], "testing", "Got the wrong comment info")
 
-        outcome = delete_comment(3, ryan_c_session_key, comment_id)
+        outcome = delete_comment(ryan_c_info[1], ryan_c_info[0], comment_id)
         self.assertFalse(outcome, "Should not have been able to delete someone else's comment unless admin")
 
-        outcome = delete_comment(2, ryan_r_session_key, comment_id)
+        outcome = delete_comment(ryan_r_info[1], ryan_r_info[0], comment_id)
         self.assertFalse(outcome, "Should have been able to delete their own comment")
 
-        outcome = add_comment(2, ryan_r_session_key, 1, 1, 'npcs', "testing")
+        outcome = add_comment(ryan_r_info[1], ryan_r_info[0], 1, 1, 'npcs', "testing")
         self.assertTrue(outcome[0], "Comment should have been able to be made")
 
         comment_id = outcome[1]
 
-        outcome = delete_comment(1, beck_session_key, comment_id)
+        outcome = delete_comment(beck_info[1], beck_info[0], comment_id)
         self.assertFalse(outcome, "Should have been able to delete since they are the owner")
 
     def test_get_component_comments(self):
@@ -65,9 +65,9 @@ class MyTestCase(unittest.TestCase):
         rebuild_tables()
         load_data()
 
-        ryan_r_session_key = login_user('RyanR', 'PabloWeegee69')
+        ryan_r_info = login_user('RyanR', 'PabloWeegee69')
 
-        outcome = add_comment(2, ryan_r_session_key, 2, 5, 'npcs', "testing")
+        outcome = add_comment(ryan_r_info[1], ryan_r_info[0], 2, 5, 'npcs', "testing")
         self.assertTrue(outcome[0], "Comment should have been able to be made")
 
         outcome = get_component_comments(5, 'npcs')

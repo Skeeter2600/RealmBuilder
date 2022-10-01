@@ -18,7 +18,7 @@ class AccountInfo(Resource):
         This will get a user's private profile
         """
         parser = reqparse.RequestParser()
-        parser.add_argument('user_id', type=str)
+        parser.add_argument('user_id', type=int)
         parser.add_argument('session_key', type=str)
         args = parser.parse_args()
 
@@ -34,7 +34,7 @@ class AccountInfo(Resource):
         This will edit a user's profile
         """
         parser = reqparse.RequestParser()
-        parser.add_argument('user_id', type=str)
+        parser.add_argument('user_id', type=int)
         parser.add_argument('session_key', type=str)
         parser.add_argument('details', type=json)
         args = parser.parse_args()
@@ -76,7 +76,7 @@ class AccountInfo(Resource):
         This will delete a user's account
         """
         parser = reqparse.RequestParser()
-        parser.add_argument('user_id', type=str)
+        parser.add_argument('user_id', type=int)
         parser.add_argument('session_key', type=str)
         args = parser.parse_args()
 
@@ -105,7 +105,7 @@ class LoginLogout(Resource):
 
     def put(self):
         parser = reqparse.RequestParser()
-        parser.add_argument('user_id', type=str)
+        parser.add_argument('user_id',type=int)
         parser.add_argument('session_key', type=str)
         args = parser.parse_args()
 
@@ -117,9 +117,10 @@ class LoginLogout(Resource):
 
 
 class UserSearch(Resource):
+
     def get(self, param, limit, page):
         parser = reqparse.RequestParser()
-        parser.add_argument('user_id', type=str)
+        parser.add_argument('user_id', type=int)
         parser.add_argument('session_key', type=str)
         args = parser.parse_args()
 

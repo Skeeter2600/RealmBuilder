@@ -206,7 +206,7 @@ def get_user_public(user_id):
         worlds_selection = """
             SELECT world_id, name FROM world_user_linker
             INNER JOIN worlds ON world_user_linker.world_id = worlds.id
-            WHERE user_id = %s
+            WHERE user_id = %s AND worlds.public = 't'
             """
         cur.execute(worlds_selection, [user_id])
         worlds = cur.fetchall()
@@ -219,13 +219,67 @@ def get_user_public(user_id):
     return info
 
 
+def get_user_private(user_id, session_key):
+    """
+    This function will get private the info on a user
+    :param user_id: the user's id
+    :param session_key: the user's session key
+    :return: the user's info in json format
+
+    :format return: { username: user's username,
+                      profile_pic: user's profile picture,
+                      bio: the user's bio,
+                      email: the user's email
+                      worlds: [{id: world id,
+                                name: world name}]
+                    }
+    """
+    info = {'username': '',
+            'profile_pic': '',
+            'bio': '',
+            'email': '',
+            'worlds': []}
+    if check_session_key(user_id, session_key):
+
+        conn = connect()
+        cur = conn.cursor()
+
+        info_query = """
+            SELECT username, profile_pic, bio FROM users 
+            WHERE id = %s
+            """
+        cur.execute(info_query, [user_id])
+        values = cur.fetchall()
+        if len(values) > 0:
+            values = values[0]
+            info['username'] = values[0]
+            info['profile_pic'] = values[1]
+            info['bio'] = values[2]
+
+            worlds_selection = """
+                SELECT world_id, name FROM world_user_linker
+                INNER JOIN worlds ON world_user_linker.world_id = worlds.id
+                WHERE user_id = %s
+                """
+            cur.execute(worlds_selection, [user_id])
+            worlds = cur.fetchall()
+
+            for world in worlds:
+                info['worlds'].append({'id': world[0],
+                                       'name': world[1]})
+
+        conn.close()
+    return info
+
+
+
 def login_user(username, password):
     """
     This will log a user in and get them the session
     key for their current session
     :param username: the user's username
     :param password: the user's password
-    :return: the session key of successful, error string if not
+    :return: the session key of successful and user id, error string if not
     """
     conn = connect()
     cur = conn.cursor()
@@ -241,7 +295,7 @@ def login_user(username, password):
 
     if not outcome:
         conn.close()
-        return "Bad username or password"
+        return ["Bad username or password", -1]
 
     if outcome[0] == (None,):
         session_key = secrets.token_hex(16)
@@ -249,12 +303,14 @@ def login_user(username, password):
             UPDATE users
             SET session_key = %s
             WHERE users.username = %s and users.password = %s
+            returning id
             """
         cur.execute(session_key_request, (session_key, username, encrypted))
+        user_id = cur.fetchall()[0][0]
 
         conn.commit()
         conn.close()
-        return session_key
+        return [session_key, user_id]
 
 
 def logout_user(user_id, session_key):

@@ -31,7 +31,7 @@ def rebuild_comments_table():
     conn.close()
 
 
-def add_comment(user_id, session_key, world_id, component_id, component_type, comment, ):
+def add_comment(user_id, session_key, world_id, component_id, component_type, comment):
     """
     This function will be called when a user makes
     a comment on a component
@@ -95,6 +95,43 @@ def delete_comment(user_id, session_key, comment_id):
                     conn.commit()
                     conn.close()
                     return True
+    return False
+
+
+def edit_comment(user_id, session_key, comment_id, comment):
+    """
+    This function will edit the text in a comment, given
+    the user trying to is the one who posted the comment
+
+    :param user_id: the is of the user editing
+    :param session_key: the user's session key
+    :param comment_id: the id of the comment being edited
+    :param comment: the new comment text
+
+    :return: True if successful, False if not
+    """
+    if check_session_key(user_id, session_key):
+        conn = connect()
+        cur = conn.cursor()
+
+        edit_query = """
+            UPDATE comments SET
+            comment = %s
+            WHERE id = %s AND user_id = %s
+            RETURNING id
+            """
+        cur.execute(edit_query, (comment, comment_id, user_id))
+
+        outcome = cur.fetchall()
+
+        if outcome == ():
+            conn.close()
+            return False
+
+        conn.commit()
+        conn.close()
+        return True
+
     return False
 
 

@@ -407,7 +407,7 @@ def search_world(param, limit, page, user_id, session_key):
         param = '%' + param + '%'
 
         request = """
-            SELECT worlds.id, worlds.name FROM world_user_linker
+            SELECT DISTINCT ON (worlds.id) worlds.id, worlds.name FROM world_user_linker
                 INNER JOIN worlds on worlds.id = world_user_linker.world_id
             WHERE name ILIKE %s AND
                 (worlds.public = 't' OR world_user_linker.user_id = %s)
@@ -416,11 +416,8 @@ def search_world(param, limit, page, user_id, session_key):
         cur.execute(request, (param, user_id, limit, (page - 1) * limit))
         worlds_raw = cur.fetchall()
         for world in worlds_raw:
-            temp = {'id': world[0],
-                    'name': world[1]}
-            if temp not in world_list:
-                world_list.append({'id': world[0],
-                                   'name': world[1]})
+            world_list.append({'id': world[0],
+                               'name': world[1]})
 
         conn.close()
 

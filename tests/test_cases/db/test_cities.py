@@ -17,8 +17,8 @@ class MyTestCase(unittest.TestCase):
         rebuild_tables()
         load_data()
 
-        ryan_r_session_key = login_user('RyanR', 'PabloWeegee69')
-        ryan_c_session_key = login_user('RyanC', 'ThuaccTwumps')
+        ryan_r_info = login_user('RyanR', 'PabloWeegee69')
+        ryan_c_info = login_user('RyanC', 'ThuaccTwumps')
 
         details = {'world_id': 2,
                    'name': 'Test',
@@ -32,10 +32,10 @@ class MyTestCase(unittest.TestCase):
                    'associated_specials': []}
 
         # testing making a new city
-        outcome = add_city(2, ryan_r_session_key, details)
+        outcome = add_city(ryan_r_info[1], ryan_r_info[0], details)
         self.assertFalse(outcome[0], "created city when is should not have")
 
-        outcome = add_city(3, ryan_c_session_key, details)
+        outcome = add_city(ryan_c_info[1], ryan_c_info[0], details)
         self.assertTrue(outcome[0], "did not create city properly")
 
         city_id = outcome[1]
@@ -54,7 +54,7 @@ class MyTestCase(unittest.TestCase):
                                       'revealed': False}}
 
         # testing getting the city
-        outcome = get_city(2, ryan_r_session_key, city_id, False)
+        outcome = get_city(ryan_r_info[1], ryan_r_info[0], city_id, False)
         self.assertEqual(outcome, {'name': '',
                                    'images': [],
                                    'population': 0,
@@ -67,7 +67,7 @@ class MyTestCase(unittest.TestCase):
                                    'admin_content': {}},
                          "should not be able to see any content as the city isn't revealed")
 
-        outcome = get_city(3, ryan_c_session_key, city_id, True)
+        outcome = get_city(ryan_c_info[1], ryan_c_info[0], city_id, True)
         # test each field is right for as an admin
         # (done this way due to timestamp in the creation changing each time)
         self.assertEqual(expected['name'], outcome['name'], "did not get the city properly")
@@ -83,7 +83,7 @@ class MyTestCase(unittest.TestCase):
         self.assertEqual(expected['admin_content']['revealed'],
                          outcome['admin_content']['revealed'], "did not get the city properly")
 
-        outcome = get_city(3, ryan_c_session_key, city_id, False)
+        outcome = get_city(ryan_c_info[1], ryan_c_info[0], city_id, False)
         # test each field is right for as an admin
         # (done this way due to timestamp in the creation changing each time)
         self.assertEqual('', outcome['name'], "City has not been revealed, so should not be visible")
@@ -96,8 +96,8 @@ class MyTestCase(unittest.TestCase):
         rebuild_tables()
         load_data()
 
-        ryan_r_session_key = login_user('RyanR', 'PabloWeegee69')
-        ryan_c_session_key = login_user('RyanC', 'ThuaccTwumps')
+        ryan_r_info = login_user('RyanR', 'PabloWeegee69')
+        ryan_c_info = login_user('RyanC', 'ThuaccTwumps')
 
         success_expected = {'name': 'Jamestown',
                             'images': [],
@@ -117,13 +117,13 @@ class MyTestCase(unittest.TestCase):
                                 }
                             }
 
-        outcome = copy_city(2, ryan_r_session_key, 4, 2)[0]
+        outcome = copy_city(ryan_r_info[1], ryan_r_info[0], 4, 2)[0]
         self.assertFalse(outcome, "Should not have been successful")
 
-        outcome = copy_city(3, ryan_c_session_key, 4, 2)
+        outcome = copy_city(ryan_c_info[1], ryan_c_info[0], 4, 2)
         self.assertTrue(outcome[0], "Should have been successful")
 
-        outcome = get_city(3, ryan_c_session_key, 4, True)
+        outcome = get_city(ryan_c_info[1], ryan_c_info[0], 4, True)
         self.assertEqual(success_expected['name'], outcome['name'], "did not get the city properly")
         self.assertEqual(success_expected['images'], outcome['images'], "did not get the city properly")
         self.assertEqual(success_expected['population'], outcome['population'], "did not get the city properly")
@@ -145,15 +145,15 @@ class MyTestCase(unittest.TestCase):
         rebuild_tables()
         load_data()
 
-        ryan_c_session_key = login_user('RyanC', 'ThuaccTwumps')
-        beck_session_key = login_user('Beck', 'RiamChesteroot26')
+        ryan_c_info = login_user('RyanC', 'ThuaccTwumps')
+        beck_info = login_user('Beck', 'RiamChesteroot26')
 
-        outcome = delete_city(3, ryan_c_session_key, 1, 3)
+        outcome = delete_city(ryan_c_info[1], ryan_c_info[0], 1, 3)
         self.assertFalse(outcome, "Should not be able to delete city")
-        outcome = delete_city(1, beck_session_key, 1, 3)
+        outcome = delete_city(beck_info[1], beck_info[0], 1, 3)
         self.assertTrue(outcome, "Should be able to delete city")
 
-        check_city_exists = get_city(1, beck_session_key, 1, True)
+        check_city_exists = get_city(beck_info[1], beck_info[0], 1, True)
         self.assertEqual('', check_city_exists['name'], "city shouldn't exists any more")
 
     def test_edit_city(self):
@@ -165,8 +165,8 @@ class MyTestCase(unittest.TestCase):
         load_data()
 
         # login an admin for Three Lords Sword Coast (Ryan C) and an admin for Real World (Ryan R)
-        ryan_r_session_key = login_user('RyanR', 'PabloWeegee69')
-        ryan_c_session_key = login_user('RyanC', 'ThuaccTwumps')
+        ryan_r_info = login_user('RyanR', 'PabloWeegee69')
+        ryan_c_info = login_user('RyanC', 'ThuaccTwumps')
 
         # values to update Jamestown with
         edit_values = {'name': 'Jamestown 2.0',
@@ -177,9 +177,9 @@ class MyTestCase(unittest.TestCase):
                        'description': 'test',
                        'revealed': True}
 
-        outcome = edit_city(3, ryan_c_session_key, 4, 6, edit_values)
+        outcome = edit_city(ryan_c_info[1], ryan_c_info[0], 4, 6, edit_values)
         self.assertEqual(outcome['name'], '', "should not have edited any info")
-        outcome = edit_city(2, ryan_r_session_key, 4, 6, edit_values)
+        outcome = edit_city(ryan_r_info[1], ryan_r_info[0], 4, 6, edit_values)
         self.assertEqual(edit_values['name'], outcome['name'], "did not get the city properly")
         self.assertEqual(edit_values['population'], outcome['population'], "did not get the city properly")
         self.assertEqual(edit_values['song'], outcome['song'], "did not get the city properly")
@@ -188,7 +188,7 @@ class MyTestCase(unittest.TestCase):
         self.assertEqual(edit_values['description'], outcome['description'], "did not get the city properly")
 
         # get the info to make sure
-        outcome = get_city(3, ryan_c_session_key, 4, False)
+        outcome = get_city(ryan_c_info[1], ryan_c_info[0], 4, False)
         self.assertEqual(edit_values['name'], outcome['name'], "did not get the city properly")
         self.assertEqual(edit_values['population'], outcome['population'], "did not get the city properly")
         self.assertEqual(edit_values['song'], outcome['song'], "did not get the city properly")
@@ -205,19 +205,19 @@ class MyTestCase(unittest.TestCase):
         load_data()
 
         # login an admin for Greenest (Ryan C) and an admin for Jamestown (Ryan R)
-        ryan_r_session_key = login_user('RyanR', 'PabloWeegee69')
-        ryan_c_session_key = login_user('RyanC', 'ThuaccTwumps')
+        ryan_r_info = login_user('RyanR', 'PabloWeegee69')
+        ryan_c_info = login_user('RyanC', 'ThuaccTwumps')
 
         # should get Jamestown for both
-        outcome = get_city(2, ryan_r_session_key, 4, True)
+        outcome = get_city(ryan_r_info[1], ryan_r_info[0], 4, True)
         self.assertEqual("Jamestown", outcome['name'], "not the right city name")
-        outcome = get_city(3, ryan_c_session_key, 4, False)
+        outcome = get_city(ryan_c_info[1], ryan_c_info[0], 4, False)
         self.assertEqual("Jamestown", outcome['name'], "not the right city name")
 
         # should get Greenest for both
-        outcome = get_city(3, ryan_c_session_key, 2, True)
+        outcome = get_city(ryan_c_info[1], ryan_c_info[0], 2, True)
         self.assertEqual("Greenest", outcome['name'], "not the right city name")
-        outcome = get_city(2, ryan_r_session_key, 2, False)
+        outcome = get_city(ryan_r_info[1], ryan_r_info[0], 2, False)
         self.assertEqual('', outcome['name'], "shouldn't get anything (not revealed)")
 
     def test_get_cities(self):
@@ -228,15 +228,15 @@ class MyTestCase(unittest.TestCase):
         rebuild_tables()
         load_data()
 
-        beck_session_key = login_user('Beck', 'RiamChesteroot26')
-        charles_session_key = login_user('Charles', 'CalvionNeedsAA')
+        beck_info = login_user('Beck', 'RiamChesteroot26')
+        charles_info = login_user('Charles', 'CalvionNeedsAA')
 
         # searching in Savior's Cradle for all cities as admin, should be 3
-        outcome = get_cities(1, beck_session_key, 3, None, 1)
+        outcome = get_cities(beck_info[1], beck_info[0], 3, None, 1)
         self.assertEqual(3, outcome.__len__(), "not the right number of cities")
 
         # searching in Savior's Cradle for all cities as normal user, should be 2
-        outcome = get_cities(4, charles_session_key, 3, None, 1)
+        outcome = get_cities(charles_info[1], charles_info[0], 3, None, 1)
         self.assertEqual(2, outcome.__len__(), "not the right number of cities")
 
     def test_search_cities(self):
@@ -247,23 +247,23 @@ class MyTestCase(unittest.TestCase):
         rebuild_tables()
         load_data()
 
-        beck_session_key = login_user('Beck', 'RiamChesteroot26')
-        charles_session_key = login_user('Charles', 'CalvionNeedsAA')
+        beck_info = login_user('Beck', 'RiamChesteroot26')
+        charles_info = login_user('Charles', 'CalvionNeedsAA')
 
         # searching for cities with the string 'Meridia' as an admin, expecting 2 results
-        outcome = search_for_city('Meridia', 3, None, 1, 1, beck_session_key)
+        outcome = search_for_city('Meridia', 3, None, 1, beck_info[1], beck_info[0])
         self.assertEqual([{'id': 1, 'name': 'New Meridia', 'population': 10392, 'reveal_status': False},
                           {'id': 5, 'name': 'Meridia', 'population': 1392, 'reveal_status': True}],
                          outcome, "not the right cities")
 
         # searching for cities with the string 'Meridia' as a user, expecting 1 result
-        outcome = search_for_city('Meridia', 3, None, 1, 4, charles_session_key)
+        outcome = search_for_city('Meridia', 3, None, 1, charles_info[1], charles_info[0])
         self.assertEqual([{'id': 5, 'name': 'Meridia', 'population': 1392}], outcome, "not the right cities")
 
-        outcome = search_for_city('e', 3, None, 1, 1, beck_session_key)
+        outcome = search_for_city('e', 3, None, 1, beck_info[1], beck_info[0])
         self.assertEqual(len(outcome), 3, "not the right number of cities")
 
-        outcome = search_for_city('e', 3, None, 1, 4, charles_session_key)
+        outcome = search_for_city('e', 3, None, 1, charles_info[1], charles_info[0])
         self.assertEqual(len(outcome), 2, "not the right number of cities")
 
     def test_get_npcs_in_city(self):
@@ -274,23 +274,23 @@ class MyTestCase(unittest.TestCase):
         rebuild_tables()
         load_data()
 
-        beck_session_key = login_user('Beck', 'RiamChesteroot26')
-        charles_session_key = login_user('Charles', 'CalvionNeedsAA')
+        beck_info = login_user('Beck', 'RiamChesteroot26')
+        charles_info = login_user('Charles', 'CalvionNeedsAA')
 
         # loading the npcs in Meridia as an admin, expecting 3 results
-        outcome = get_npcs_by_city(1, beck_session_key, 5)
+        outcome = get_npcs_by_city(beck_info[1], beck_info[0], 5)
         self.assertEqual(3, outcome.__len__(), "didn't get all of the NPCs in Meridia")
 
         # loading the npcs in Meridia as a user, expecting 2 result
-        outcome = get_npcs_by_city(4, charles_session_key, 5)
+        outcome = get_npcs_by_city(charles_info[1], charles_info[0], 5)
         self.assertEqual(2, outcome.__len__(), "didn't get all of the NPCs in Meridia")
 
         # loading the npcs in Charlote as an admin, expecting 1 result
-        outcome = get_npcs_by_city(1, beck_session_key, 3)
+        outcome = get_npcs_by_city(beck_info[1], beck_info[0], 3)
         self.assertEqual(1, outcome.__len__(), "didn't get all of the NPCs in Charlote")
 
         # loading the npcs in Charlote as an admin, expecting 0 results
-        outcome = get_npcs_by_city(4, charles_session_key, 3)
+        outcome = get_npcs_by_city(charles_info[1], charles_info[0], 3)
         self.assertEqual(0, outcome.__len__(), "Shouldn't have gotten any NPCs in Charlote")
 
     def test_get_specials_in_city(self):
@@ -301,15 +301,15 @@ class MyTestCase(unittest.TestCase):
         rebuild_tables()
         load_data()
 
-        beck_session_key = login_user('Beck', 'RiamChesteroot26')
-        charles_session_key = login_user('Charles', 'CalvionNeedsAA')
+        beck_info = login_user('Beck', 'RiamChesteroot26')
+        charles_info = login_user('Charles', 'CalvionNeedsAA')
 
         # loading the specials in Meridia as an admin, expecting 1 result
-        outcome = get_specials_by_city(1, beck_session_key, 5)
+        outcome = get_specials_by_city(beck_info[1], beck_info[0], 5)
         self.assertEqual(1, outcome.__len__(), "didn't get all of the specials in Meridia")
 
         # loading the specials in Meridia as a user, expecting 0 results
-        outcome = get_specials_by_city(4, charles_session_key, 5)
+        outcome = get_specials_by_city(charles_info[1], charles_info[0], 5)
         self.assertEqual(0, outcome.__len__(), "got too many specials in Meridia")
 
 

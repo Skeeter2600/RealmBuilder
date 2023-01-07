@@ -124,51 +124,28 @@ class WorldOwner(Resource):
 
 class WorldUserList(Resource):
 
-    def get(self, world_id):
+    def get(self, user_id, session_key, world_id):
         """
         This will get the list of users in a world
         """
-        parser = reqparse.RequestParser()
-        parser.add_argument('user_id', type=int)
-        parser.add_argument('session_key', type=str)
-        args = parser.parse_args()
-
-        user_id = args['user_id']
-        session_key = args['session_key']
-
         return src.components.worlds.get_world_user_list(world_id, user_id, session_key)
 
 
 class WorldDetails(Resource):
 
-    def get(self, world_id):
+    def get(self, user_id, session_key, world_id):
         """
         This will get the info on a world
         """
-        parser = reqparse.RequestParser()
-        parser.add_argument('user_id', type=int)
-        parser.add_argument('session_key', type=str)
-        args = parser.parse_args()
-
-        user_id = args['user_id']
-        session_key = args['session_key']
-
         return src.components.worlds.get_world_details(world_id, user_id, session_key)
 
 
 class WorldSearch(Resource):
 
-    def get(self, param, limit, page):
+    def get(self, user_id, session_key, param, limit, page):
         """
         This will search a world by the defined parameters
         """
-        parser = reqparse.RequestParser()
-        parser.add_argument('user_id', type=int)
-        parser.add_argument('session_key', type=str)
-        args = parser.parse_args()
-
-        user_id = args['user_id']
-        session_key = args['session_key']
-
         return src.components.worlds.search_world(param, limit, page, user_id, session_key)
+
 

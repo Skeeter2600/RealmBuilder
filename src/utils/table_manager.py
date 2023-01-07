@@ -13,6 +13,7 @@ from src.linkers.npc_special_linker import rebuild_npc_special_linker
 from src.linkers.special_image_linker import rebuild_special_image_linker
 from src.linkers.world_user_linker import rebuild_world_user_linker
 from src.linkers.npc_npc_linker import rebuild_npc_npc_linker
+from src.components.likes_dislikes import rebuild_likes_dislikes_table
 
 
 def rebuild_tables():
@@ -31,3 +32,4 @@ def rebuild_tables():
     rebuild_npc_special_linker()
     rebuild_special_image_linker()
     rebuild_world_user_linker()
+    rebuild_likes_dislikes_table()

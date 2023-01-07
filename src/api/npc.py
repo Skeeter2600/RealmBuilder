@@ -115,35 +115,19 @@ class RevealNPC(Resource):
 
 class NPCDetails(Resource):
 
-    def get(self, npc_id):
+    def get(self, user_id, session_key, npc_id, admin):
         """
         This will get the info on an npc
         """
-        parser = reqparse.RequestParser()
-        parser.add_argument('user_id', type=int)
-        parser.add_argument('session_key', type=str)
-        parser.add_argument('admin', type=bool)
-        args = parser.parse_args()
-
-        user_id = args['user_id']
-        session_key = args['session_key']
-        admin = args['admin']
-
         return src.components.npcs.get_npc_info(user_id, session_key, npc_id, admin)
 
 
 class NPCSearch(Resource):
 
-    def get(self, world_id,  param, limit, page):
+    def get(self, user_id, session_key, world_id,  param, limit, page):
         """
         This will search a special by the defined parameters
         """
-        parser = reqparse.RequestParser()
-        parser.add_argument('user_id', type=int)
-        parser.add_argument('session_key', type=str)
-        args = parser.parse_args()
-
-        user_id = args['user_id']
-        session_key = args['session_key']
-
         return src.components.npcs.search_for_npc(param, world_id, limit, page, user_id, session_key)
+
+

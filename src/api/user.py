@@ -13,22 +13,6 @@ class UserAccountPublic(Resource):
 
 
 class AccountInfo(Resource):
-    def get(self):
-        """
-        This will get a user's private profile
-        """
-        parser = reqparse.RequestParser()
-        parser.add_argument('user_id', type=int)
-        parser.add_argument('session_key', type=str)
-        args = parser.parse_args()
-
-        user_id = args['user_id']
-        session_key = args['session_key']
-
-        outcome = src.components.users.get_user_private(user_id, session_key)
-
-        return outcome
-
     def put(self):
         """
         This will edit a user's profile
@@ -88,24 +72,25 @@ class AccountInfo(Resource):
         return outcome
 
 
-class LoginLogout(Resource):
-
-    def get(self):
-        parser = reqparse.RequestParser()
-        parser.add_argument('username', type=str)
-        parser.add_argument('password', type=str)
-        args = parser.parse_args()
-
-        username = args['username']
-        password = args['password']
-
-        outcome = src.components.users.login_user(username, password)
+class UserAccountPrivate(Resource):
+    def get(self, user_id, session_key):
+        """
+        This will get a user's private profile
+        """
+        outcome = src.components.users.get_user_private(user_id, session_key)
 
         return outcome
 
+
+class Login(Resource):
+    def get(self, username, password):
+        return src.components.users.login_user(username, password)
+
+
+class Logout(Resource):
     def put(self):
         parser = reqparse.RequestParser()
-        parser.add_argument('user_id',type=int)
+        parser.add_argument('user_id', type=int)
         parser.add_argument('session_key', type=str)
         args = parser.parse_args()
 
@@ -118,16 +103,6 @@ class LoginLogout(Resource):
 
 class UserSearch(Resource):
 
-    def get(self, param, limit, page):
-        parser = reqparse.RequestParser()
-        parser.add_argument('user_id', type=int)
-        parser.add_argument('session_key', type=str)
-        args = parser.parse_args()
-
-        user_id = args['user_id']
-        session_key = args['session_key']
-
-        outcome = src.components.users.search_user(param, limit, page, user_id, session_key)
-
-        return outcome
+    def get(self, user_id, session_key, param, limit, page):
+        return src.components.users.search_user(param, limit, page, user_id, session_key)
 

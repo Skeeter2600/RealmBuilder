@@ -83,7 +83,7 @@ def add_city(user_id, session_key, details):
                     add_values = ''
                     length = len(details['images'])
                     i = 0
-                    while i < length-1:
+                    while i < length - 1:
                         add_values = add_values + '(' + str(city_id) + ', ' + str(details['images'][i]) + '), '
                         i += 1
                     add_values = add_values + '(' + str(city_id) + ', ' + str(details['images'][i]) + ') '
@@ -104,7 +104,7 @@ def add_city(user_id, session_key, details):
                     add_values = ''
                     length = len(details['associated_npcs'])
                     i = 0
-                    while i < length-1:
+                    while i < length - 1:
                         add_values = add_values + '(' + str(city_id) + ', ' + str(details['associated_npcs'][i]) + '), '
                         i += 1
                     add_values = add_values + '(' + str(city_id) + ', ' + str(details['associated_npcs'][i]) + ') '
@@ -125,8 +125,9 @@ def add_city(user_id, session_key, details):
                     add_values = ''
                     length = len(details['associated_specials'])
                     i = 0
-                    while i < length-1:
-                        add_values = add_values + '(' + str(city_id) + ', ' + str(details['associated_specials'][i]) + '), '
+                    while i < length - 1:
+                        add_values = add_values + '(' + str(city_id) + ', ' + str(
+                            details['associated_specials'][i]) + '), '
                         i += 1
 
                     add_values = add_values + '(' + str(city_id) + ', ' + str(details['associated_specials'][i]) + ') '
@@ -305,6 +306,10 @@ def get_city(user_id, session_key, city_id, admin):
 
     :format return: { name: city name,
                       images: [images associated with npc],
+                      likes: city likes,
+                      dislikes: city dislikes,
+                      user_like: is user liked it (True or False),
+                      user_dislike: is user disliked it (True or False),
                       population: city population,
                       song: city song,
                       trades: city trades,
@@ -322,6 +327,10 @@ def get_city(user_id, session_key, city_id, admin):
     """
     city_info = {'name': '',
                  'images': [],
+                 'likes': 0,
+                 'dislikes': 0,
+                 'user_like': False,
+                 'user_dislike': False,
                  'population': 0,
                  'song': '',
                  'trades': '',
@@ -376,6 +385,27 @@ def get_city(user_id, session_key, city_id, admin):
                 admin_content['edit_date'] = admin_outcome[1]
 
                 city_info['admin_content'] = admin_content
+
+            likes_dislike_query = """
+                    SELECT COUNT(*) AS total,
+                    sum(case when like_dislike = 'T' then 1 else 0 end) AS likes,
+                    sum(case when like_dislike = 'F' then 1 else 0 end) AS dislikes,
+                    sum(case when like_dislike = 'T' AND user_id = %s then 1 else 0 end) AS user_like,
+                    sum(case when like_dislike = 'F' AND user_id = %s then 1 else 0 end) AS user_dislike
+                    FROM likes_dislikes
+                    WHERE component_id = %s AND component_type = 'cities'
+                """
+
+            cur.execute(likes_dislike_query, [user_id, user_id, city_id])
+            like_dislike_outcome = cur.fetchall()
+
+            if len(like_dislike_outcome) > 0 and (like_dislike_outcome[0][0] != 0):
+                like_dislike_outcome = like_dislike_outcome[0]
+
+                city_info['likes'] = like_dislike_outcome[1]
+                city_info['dislikes'] = like_dislike_outcome[2]
+                city_info['user_like'] = (like_dislike_outcome[3] > 0)
+                city_info['user_dislike'] = (like_dislike_outcome[4] > 0)
 
         conn.close()
 

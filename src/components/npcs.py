@@ -306,7 +306,11 @@ def get_npc_info(user_id, session_key, npc_id, admin):
     :return: the npc info in a json format
 
     :format return: { name: npc name,
-                      images: [images associated with npc]
+                      images: [images associated with npc],
+                      likes: npc likes,
+                      dislikes: npc dislikes,
+                      user_like: is user liked it (True or False),
+                      user_dislike: is user disliked it (True or False),
                       age: npc age,
                       occupation: npc occupation,
                       description: npc description,
@@ -324,6 +328,10 @@ def get_npc_info(user_id, session_key, npc_id, admin):
     """
     npc_info = {'name': '',
                 'images': [],
+                'likes': 0,
+                'dislikes': 0,
+                'user_like': False,
+                'user_dislike': False,
                 'age': '',
                 'occupation': "",
                 'description': "",
@@ -377,6 +385,27 @@ def get_npc_info(user_id, session_key, npc_id, admin):
                 admin_content['edit_date'] = admin_outcome[2]
 
                 npc_info['admin_content'] = admin_content
+
+            likes_dislike_query = """
+                    SELECT COUNT(*) AS total,
+                    sum(case when like_dislike = 'T' then 1 else 0 end) AS likes,
+                    sum(case when like_dislike = 'F' then 1 else 0 end) AS dislikes,
+                    sum(case when like_dislike = 'T' AND user_id = %s then 1 else 0 end) AS user_like,
+                    sum(case when like_dislike = 'F' AND user_id = %s then 1 else 0 end) AS user_dislike
+                    FROM likes_dislikes
+                    WHERE component_id = %s AND component_type = 'npcs'
+                """
+
+            cur.execute(likes_dislike_query, [user_id, user_id, npc_id])
+            like_dislike_outcome = cur.fetchall()
+
+            if len(like_dislike_outcome) > 0 and (like_dislike_outcome[0][0] != 0):
+                like_dislike_outcome = like_dislike_outcome[0]
+
+                npc_info['likes'] = like_dislike_outcome[1]
+                npc_info['dislikes'] = like_dislike_outcome[2]
+                npc_info['user_like'] = (like_dislike_outcome[3] > 0)
+                npc_info['user_dislike'] = (like_dislike_outcome[4] > 0)
 
         conn.close()
 

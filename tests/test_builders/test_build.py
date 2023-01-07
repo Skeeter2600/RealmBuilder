@@ -344,17 +344,24 @@ def load_data():
     conn.commit()
 
     add_comments = """
-        INSERT INTO comments(user_id, comment, time, likes, dislikes, world_id, component_id, component_type) VALUES
-            (1, 'hey, dats me!', '2022-01-29 13:17:32', 1, 0, 2, 5, 'npcs'),
-            (3, 'That is my world', '2022-07-07 04:01:00', 2, 0, 3, 4, 'worlds'),
-            (3, 'That is my world', '2022-07-07 04:02:00', 1, 1, 2, 2, 'worlds'),
-            (4, 'Didn''t see that coming', '2020-05-12 17:18:22', 5, 0, 3, 8, 'npcs'),
-            (5, 'hey, dats me!', '2022-01-29 13:17:32', 2, 0, 4, 3, 'npcs'),
-            (5, 'hey, dats me again!', '2022-01-29 13:18:32', 1, 1, 3, 4, 'npcs'),
-            (5, 'hey, dats me again again!', '2022-01-29 13:19:32', 0, 0, 5, 6, 'npcs'),
-            (2, 'I live there...', '2019-05-05 11:11:11', 6, 0, 6, 6, 'cities')
+        INSERT INTO comments(user_id, comment, time, world_id, component_id, component_type) VALUES
+            (1, 'hey, dats me!', '2022-01-29 13:17:32', 2, 5, 'npcs'),
+            (3, 'That is my world', '2022-07-07 04:01:00', 3, 4, 'worlds'),
+            (3, 'That is my world', '2022-07-07 04:02:00', 2, 2, 'worlds'),
+            (4, 'Didn''t see that coming', '2020-05-12 17:18:22', 3, 8, 'npcs'),
+            (5, 'hey, dats me!', '2022-01-29 13:17:32', 4, 3, 'npcs'),
+            (5, 'hey, dats me again!', '2022-01-29 13:18:32', 3, 4, 'npcs'),
+            (5, 'hey, dats me again again!', '2022-01-29 13:19:32', 5, 6, 'npcs'),
+            (2, 'I live there...', '2019-05-05 11:11:11', 6, 6, 'cities')
         """
     cur.execute(add_comments)
     conn.commit()
+
+    add_likes = """
+        INSERT INTO likes_dislikes(user_id, like_dislike, time, component_id, component_type) VALUES
+            (1, True, '2022-01-29 13:17:32', 1, 'npc'),
+            (1, True, '2022-01-29 13:17:32', 1, 'npc'),
+            ()
+        """
 
     conn.close()

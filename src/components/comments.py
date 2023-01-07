@@ -18,8 +18,6 @@ def rebuild_comments_table():
             user_id             INTEGER NOT NULL,
             comment             TEXT NOT NULL,
             time                TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-            likes               INTEGER DEFAULT 0,
-            dislikes            INTEGER DEFAULT 0,
             world_id            INTEGER NOT NULL REFERENCES worlds ON DELETE CASCADE,
             component_id        INTEGER NOT NULL,
             component_type      TEXT NOT NULL
@@ -81,7 +79,7 @@ def delete_comment(user_id, session_key, comment_id):
             """
         cur.execute(user_check, [comment_id])
         outcome = cur.fetchall()
-        if outcome != []:
+        if outcome:
             outcome = outcome[0]
             if check_editable(outcome[1], user_id, session_key) or outcome[0] == user_id:
                 delete_request = """
@@ -135,11 +133,12 @@ def edit_comment(user_id, session_key, comment_id, comment):
     return False
 
 
-def get_comment(comment_id):
+def get_comment(comment_id, user_id):
     """
     This function will get the info related to a comment
 
     :param comment_id: the id of the component with the comments
+    :param user_id: the id of the user signed in
 
     :return: info on the comment
 
@@ -150,39 +149,65 @@ def get_comment(comment_id):
                       time: the time stamp of the comment
                       likes: int of likes,
                       dislikes: int of dislikes
+                      user_like: is user liked it (True or False),
+                      user_dislike: is user disliked it (True or False),
                     }
     """
     conn = connect()
     cur = conn.cursor()
 
     comment_request = """
-            SELECT users.id, users.username, users.profile_pic, comment, time, likes, dislikes FROM comments
+            SELECT users.id, users.username, users.profile_pic, comment, time FROM comments
                 INNER JOIN users ON comments.user_id = users.id
             WHERE comments.id = %s
             """
     cur.execute(comment_request, [comment_id])
     results = cur.fetchall()
-    conn.close()
-
     if results != ():
         results = results[0]
         values = {'user': {'user_id': results[0],
-                         'user_name': results[1],
-                         'profile_pic': results[2]},
-                'comment': results[3],
-                'time': results[4],
-                'likes': results[5],
-                'dislikes': results[6]
-                }
+                           'user_name': results[1],
+                           'profile_pic': results[2]},
+                  'comment': results[3],
+                  'time': results[4],
+                  'likes': 0,
+                  'dislikes': 0,
+                  'user_like': False,
+                  'user_dislike': False
+                  }
+
+        likes_dislike_query = """
+                        SELECT COUNT(*) AS total,
+                        sum(case when like_dislike = 'T' then 1 else 0 end) AS likes,
+                        sum(case when like_dislike = 'F' then 1 else 0 end) AS dislikes,
+                        sum(case when like_dislike = 'T' AND user_id = %s then 1 else 0 end) AS user_like,
+                        sum(case when like_dislike = 'F' AND user_id = %s then 1 else 0 end) AS user_dislike
+                        FROM likes_dislikes
+                        WHERE component_id = %s AND component_type = 'comments'
+                    """
+
+        cur.execute(likes_dislike_query, [user_id, user_id, comment_id])
+        like_dislike_outcome = cur.fetchall()
+        conn.close()
+
+        if len(like_dislike_outcome) > 0 and (like_dislike_outcome[0][0] != 0):
+            like_dislike_outcome = like_dislike_outcome[0]
+
+            values['likes'] = like_dislike_outcome[1]
+            values['dislikes'] = like_dislike_outcome[2]
+            values['user_like'] = (like_dislike_outcome[3] > 0)
+            values['user_dislike'] = (like_dislike_outcome[4] > 0)
+
         return values
     return {}
 
 
-def get_component_comments(component_id, component_table):
+def get_component_comments(user_id, component_id, component_table):
     """
     This function will get the comments associated with
     a component and the info associated to them
 
+    :param user_id: the id of the user signed in
     :param component_id: the id of the component with the comments
     :param component_table: the table of component with the comments
 
@@ -197,30 +222,65 @@ def get_component_comments(component_id, component_table):
                 dislikes: int of dislikes
             }]
     """
+    if user_id is None:
+        user_id = -1
+
     conn = connect()
     cur = conn.cursor()
 
     comment_request = """
-        SELECT users.id, users.username, users.profile_pic, comment, time, likes, dislikes FROM comments
+        SELECT users.id AS commenter_id, users.username, users.profile_pic, comment, time, comments.id AS comment_id FROM comments
             INNER JOIN users ON users.id = comments.user_id
         WHERE component_id = %s AND component_type = %s
         """
     cur.execute(comment_request, (component_id, component_table))
     results = cur.fetchall()
-    conn.close()
 
     # compile the comments
     data = []
     for comment in results:
-        data.append({
-            'user': {'user_id': comment[0],
-                     'user_name': comment[1],
-                     'profile_pic': comment[2]},
-            'comment': comment[3],
-            'time': comment[4],
-            'likes': comment[5],
-            'dislikes': comment[6]
-        })
+
+        likes_dislike_query = """
+                        SELECT COUNT(*) AS total,
+                        sum(case when like_dislike = 'T' then 1 else 0 end) AS likes,
+                        sum(case when like_dislike = 'F' then 1 else 0 end) AS dislikes,
+                        sum(case when like_dislike = 'T' AND user_id = %s then 1 else 0 end) AS user_like,
+                        sum(case when like_dislike = 'F' AND user_id = %s then 1 else 0 end) AS user_dislike
+                        FROM likes_dislikes
+                        WHERE component_id = %s AND component_type = 'comments'
+                    """
+
+        cur.execute(likes_dislike_query, [user_id, user_id, comment[5]])
+        like_dislike_outcome = cur.fetchall()
+        conn.close()
+
+        if like_dislike_outcome[0][0] != 0:
+            data.append({
+                'user': {'user_id': comment[0],
+                         'user_name': comment[1],
+                         'profile_pic': comment[2]},
+                'comment': comment[3],
+                'time': comment[4],
+                'likes': like_dislike_outcome[1],
+                'dislikes': like_dislike_outcome[2],
+                'user_like': (like_dislike_outcome[3] > 0),
+                'user_dislike': (like_dislike_outcome[4] > 0)
+            })
+
+        else:
+            data.append({
+                'user': {'user_id': comment[0],
+                         'user_name': comment[1],
+                         'profile_pic': comment[2]},
+                'comment': comment[3],
+                'time': comment[4],
+                'likes': 0,
+                'dislikes': 0,
+                'user_like': False,
+                'user_dislike': False
+            })
+
+    conn.close()
     return data
 
 

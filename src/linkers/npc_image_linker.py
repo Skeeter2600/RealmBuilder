@@ -54,12 +54,12 @@ def add_npc_image_association(npc_id, image, user_id, session_key):
     return False
 
 
-def remove_npc_image_association(npc_id, image, user_id, session_key):
+def remove_npc_image_association(npc_id, image_id, user_id, session_key):
     """
     This function will remove an association between
     a npc and an image from the linker table
 
-    :param image: the image file
+    :param image_id : the id of the image file
     :param npc_id: the id of the npc
     :param user_id: the id of the user requesting this
     :param session_key: the user's session key
@@ -71,9 +71,9 @@ def remove_npc_image_association(npc_id, image, user_id, session_key):
         cur = conn.cursor()
         delete_request = """
             DELETE FROM npc_image_linker WHERE
-            npc_id = %s AND image = %s
+            npc_id = %s AND id = %s
             """
-        cur.execute(delete_request, (npc_id, image))
+        cur.execute(delete_request, (npc_id, image_id))
         conn.commit()
         conn.close()
         return True

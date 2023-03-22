@@ -54,12 +54,12 @@ def add_city_image_association(city_id, image, user_id, session_key):
     return False
 
 
-def remove_city_image_association(city_id, image, user_id, session_key):
+def remove_city_image_association(city_id, image_id, user_id, session_key):
     """
     This function will remove an association between
     a city and an image from the linker table
 
-    :param image: the image file
+    :param image_id: the image file
     :param city_id: the id of the city
     :param user_id: the id of the user requesting this
     :param session_key: the user's session key
@@ -71,9 +71,9 @@ def remove_city_image_association(city_id, image, user_id, session_key):
         cur = conn.cursor()
         delete_request = """
             DELETE FROM city_image_linker WHERE
-            city_id = %s AND image = %s
+            city_id = %s AND id = %s
             """
-        cur.execute(delete_request, (city_id, image))
+        cur.execute(delete_request, (city_id, image_id))
         conn.commit()
         conn.close()
         return True

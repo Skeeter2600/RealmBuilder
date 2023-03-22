@@ -55,12 +55,12 @@ def add_special_image_association(special_id, image, user_id, session_key):
     return False
 
 
-def remove_special_image_association(special_id, image, user_id, session_key):
+def remove_special_image_association(special_id, image_id, user_id, session_key):
     """
     This function will remove an association between
     a special and an image from the linker table
 
-    :param image: the image file
+    :param image_id: the id of the image file
     :param special_id: the id of the special
     :param user_id: the id of the user requesting this
     :param session_key: the user's session key
@@ -72,9 +72,9 @@ def remove_special_image_association(special_id, image, user_id, session_key):
         cur = conn.cursor()
         delete_request = """
             DELETE FROM special_image_linker WHERE
-            special_id = %s AND image = %s
+            special_id = %s AND id = %s
             """
-        cur.execute(delete_request, (special_id, image))
+        cur.execute(delete_request, (special_id, image_id))
         conn.commit()
         conn.close()
         return True

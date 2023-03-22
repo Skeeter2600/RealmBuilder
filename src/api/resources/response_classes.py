@@ -5,7 +5,7 @@ from pydantic import BaseModel
 from typing import List
 
 
-# response classes
+# General Responses
 class SimpleResponse(BaseModel):
     """
     Returns the id and the name
@@ -25,6 +25,7 @@ class AdminContent(BaseModel):
     edit_date: datetime
 
 
+# Element Responses
 class CityAdminContent(BaseModel):
     """
     Content for a city that will be included if
@@ -112,6 +113,7 @@ class WorldResponse(BaseModel):
     user_list: List[UserResponse]
 
 
+# search responses
 class SearchAdminChecks(BaseModel):
     """
     Info on admin and if an element is viewable

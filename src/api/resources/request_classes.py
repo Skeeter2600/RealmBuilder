@@ -23,6 +23,16 @@ class ElementDetails(BaseModel):
     admin: bool
 
 
+class ImageUpload(BaseModel):
+    image: UploadFile
+    AuthoDetails: AuthoDetails
+
+
+class ImageDelete(BaseModel):
+    image_id: int
+    AuthoDetails: AuthoDetails
+
+
 # city classes
 class EditCityInfo(BaseModel):
     name: str

@@ -272,7 +272,6 @@ def get_user_private(user_id, session_key):
     return info
 
 
-
 def login_user(username, password):
     """
     This will log a user in and get them the session
@@ -357,7 +356,8 @@ def search_user(param, limit, page, user_id, session_key):
         meet the search requirements in json format
 
     :format return: [{ id: user_id
-                       username: user's username}]
+                       username: user's username
+                       profile_pic: user's profile picture}]
     """
     user_list = []
     if check_session_key(user_id, session_key):
@@ -370,7 +370,7 @@ def search_user(param, limit, page, user_id, session_key):
         param = '%' + param + '%'
 
         request = """
-            SELECT id, username FROM users
+            SELECT id, username, profile_pic FROM users
             WHERE username ILIKE %s AND
                 users.public = 't' AND users.id != %s
              LIMIT %s OFFSET %s
@@ -379,8 +379,8 @@ def search_user(param, limit, page, user_id, session_key):
         users_raw = cur.fetchall()
         for user in users_raw:
             user_list.append({'id': user[0],
-                             'username': user[1]})
-
+                              'username': user[1],
+                              'profile_pic': user[1]})
         conn.close()
 
     return user_list

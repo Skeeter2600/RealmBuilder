@@ -462,9 +462,11 @@ def search_for_city(param, world, limit, page, user_id, session_key):
     :return: the list of cities and their elements that
         meet the search requirements in json format
 
-    :format return: [{ name: city name,
-                       population: city population,
-                       reveal_status: revealed(if admin)}]
+    :format return: [{ id: the city's id
+                       name: city name,
+                       reveal_status: { admin: if admin in world
+                                        revealed(if admin): True of False}
+                    }]
     """
     city_list = []
     if check_session_key(user_id, session_key):
@@ -479,7 +481,7 @@ def search_for_city(param, world, limit, page, user_id, session_key):
 
         if check_editable(world, user_id, session_key):
             request = """
-            SELECT id, name, population, revealed FROM cities
+            SELECT id, name, revealed FROM cities
             WHERE name ILIKE %s AND
                 cities.world_id = %s
             LIMIT %s OFFSET %s
@@ -493,7 +495,7 @@ def search_for_city(param, world, limit, page, user_id, session_key):
                                   'reveal_status': city[3]})
         else:
             request = """
-                SELECT id, name, population FROM cities
+                SELECT id, name FROM cities
                 WHERE name ILIKE %s AND cities.world_id = %s AND cities.revealed = 't'
                 LIMIT %s OFFSET %s
             """

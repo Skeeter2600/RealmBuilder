@@ -1,6 +1,9 @@
+from typing import List
+
 from fastapi import APIRouter
 import src.components.worlds
-from src.api.resources.classes import EditWorld, NewWorld, DeleteWorld, JoinWorldPublic, JoinWorldPrivate, AuthoDetails
+from src.api.resources.request_classes import EditWorld, NewWorld, DeleteWorld, JoinWorldPublic, JoinWorldPrivate, AuthoDetails
+from src.api.resources.response_classes import WorldResponse, UserResponse
 
 router = APIRouter(
     prefix='/world',
@@ -8,7 +11,7 @@ router = APIRouter(
 )
 
 
-@router.put("/manage", tags=["Edit"])
+@router.put("/manage", tags=["Edit"], response_model=WorldResponse)
 async def edit_world(request_info: EditWorld):
     """
     This will edit a world
@@ -22,7 +25,7 @@ async def edit_world(request_info: EditWorld):
     return outcome[0]
 
 
-@router.post("/manage", tags=["New"])
+@router.post("/manage", tags=["New"], response_model=WorldResponse)
 async def new_world(request_info: NewWorld):
     """
     This will create a new world
@@ -37,7 +40,7 @@ async def new_world(request_info: NewWorld):
     return outcome[0]
 
 
-@router.delete("/manage", tags=["Delete"])
+@router.delete("/manage", tags=["Delete"], response_model=bool)
 async def delete_world(request_info: DeleteWorld):
     """
     This will delete a world that a user owns
@@ -46,7 +49,7 @@ async def delete_world(request_info: DeleteWorld):
                                               request_info.AuthoDetails.user_id, request_info.AuthoDetails.session_key)
 
 
-@router.put("/join/public/", tags=["Join", "Public"])
+@router.put("/join/public/", tags=["Join"], response_model=bool)
 async def join_world_public(request_info: JoinWorldPublic):
     """
     This will have a user join a public world
@@ -56,7 +59,7 @@ async def join_world_public(request_info: JoinWorldPublic):
                                                    request_info.AuthoDetails.session_key)
 
 
-@router.put("/join/private/", tags=["Join", "Private"])
+@router.put("/join/private/", tags=["Join"], response_model=bool)
 async def join_world_public(request_info: JoinWorldPrivate):
     """
     This will have a user join a private world
@@ -65,7 +68,7 @@ async def join_world_public(request_info: JoinWorldPrivate):
                                                     request_info.admin_id, request_info.AuthoDetails.session_key)
 
 
-@router.get("{world_id}/owner", tags=["Owner", "Details"])
+@router.get("/{world_id}/owner", tags=["Details"], response_model=UserResponse)
 async def get_world_owner(world_id):
     """
     This will retrieve the info of a world owner
@@ -73,7 +76,7 @@ async def get_world_owner(world_id):
     return src.components.worlds.get_owner(world_id)
 
 
-@router.get("{world_id}/admins", tags=["List", "Admins"])
+@router.get("/{world_id}/admins", tags=["List"], response_model=List[UserResponse])
 async def get_World_admins(request_info: AuthoDetails, world_id):
     """
     This will get the list of admins in a world
@@ -82,8 +85,8 @@ async def get_World_admins(request_info: AuthoDetails, world_id):
                                                       request_info.user_id, request_info.session_key)
 
 
-@router.get("{world_id}/users", tags=["List", "Users"])
-async def get_world_admins(request_info: AuthoDetails, world_id):
+@router.get("/{world_id}/users", tags=["List"], response_model=List[UserResponse])
+async def get_world_users(request_info: AuthoDetails, world_id):
     """
     This will get the list of users in a world
     """
@@ -91,7 +94,7 @@ async def get_world_admins(request_info: AuthoDetails, world_id):
                                                      request_info.user_id, request_info.session_key)
 
 
-@router.get("{world_id}", tags=["Details"])
+@router.get("/{world_id}", tags=["Details"], response_model=WorldResponse)
 async def get_world(request_info: AuthoDetails, world_id):
     """
     This will get the info on a world

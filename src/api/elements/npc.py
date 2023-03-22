@@ -1,6 +1,7 @@
 from fastapi import APIRouter
 import src.components.npcs
-from src.api.resources.classes import EditNPC, NewNPC, DeleteNPC, CopyData, AuthoDetails, ElementDetails
+from src.api.resources.request_classes import EditNPC, NewNPC, DeleteNPC, CopyData, AuthoDetails, ElementDetails
+from src.api.resources.response_classes import NPCResponse
 
 router = APIRouter(
     prefix='/npc',
@@ -8,7 +9,7 @@ router = APIRouter(
 )
 
 
-@router.put("/manage", tags=["Edit"])
+@router.put("/manage", tags=["Edit"], response_model=NPCResponse)
 async def EditNPC(request_info: EditNPC):
     """
     This will edit an NPC's info
@@ -22,7 +23,7 @@ async def EditNPC(request_info: EditNPC):
     return outcome[0]
 
 
-@router.post("/manage", tags=["New"])
+@router.post("/manage", tags=["New"], response_model=NPCResponse)
 async def NewNPC(request_info: NewNPC):
     """
     This will create a new npc
@@ -36,7 +37,7 @@ async def NewNPC(request_info: NewNPC):
     return outcome[0]
 
 
-@router.delete("/manage", tags=["Delete"])
+@router.delete("/manage", tags=["Delete"], response_model=bool)
 async def DeleteNPC(request_info: DeleteNPC):
     """
     This will delete an npc that a user owns
@@ -46,7 +47,7 @@ async def DeleteNPC(request_info: DeleteNPC):
                                           request_info.npc_id, request_info.world_id)
 
 
-@router.post("copy/{npc_id}", tags=["Copy"])
+@router.post("/copy/{npc_id}", tags=["Copy"], response_model=NPCResponse)
 async def CopyNPC(request_info: CopyData, npc_id):
     """
     This will make a copy of an npc
@@ -61,7 +62,7 @@ async def CopyNPC(request_info: CopyData, npc_id):
     return outcome[0]
 
 
-@router.put("/reveal/{world_id}/{npc_id}", tags=["Reveal Hidden"])
+@router.put("/reveal/{world_id}/{npc_id}", tags=["Reveal Hidden"], response_model=NPCResponse)
 async def reveal_hidden_npc_info(request_info: AuthoDetails, world_id, npc_id):
     """
     This will reveal hidden info for an npc
@@ -71,7 +72,7 @@ async def reveal_hidden_npc_info(request_info: AuthoDetails, world_id, npc_id):
                                                  world_id, npc_id)
 
 
-@router.get("/{npc_id}", tags=["Details"])
+@router.get("/{npc_id}", tags=["Details"], response_model=NPCResponse)
 async def npc_info(request_info: ElementDetails, npc_id):
     """
     This will get the info on an npc

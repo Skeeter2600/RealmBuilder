@@ -1,5 +1,5 @@
 from fastapi import APIRouter
-from src.api.resources.classes import EditUserDetails, NewUser, LoginDetails, AuthoDetails
+from src.api.resources.request_classes import EditUserDetails, NewUser, LoginDetails, AuthoDetails
 import src.components.users
 from src.components.comments import get_user_comments
 
@@ -9,7 +9,7 @@ router = APIRouter(
 )
 
 
-@router.get("/{user_id}", tags=["Details", "Public"])
+@router.get("/{user_id}", tags=["Details"])
 async def get_user_details_public(user_id):
     """
     This will retrieve the info of a user
@@ -17,7 +17,7 @@ async def get_user_details_public(user_id):
     return src.components.users.get_user_public(user_id)
 
 
-@router.get("/", tags=["Details", "Private"])
+@router.get("/", tags=["Details"])
 async def get_user_details_private(request_info: AuthoDetails):
     """
     This will retrieve the info of a user
@@ -55,7 +55,7 @@ async def delete_user(request_info: AuthoDetails):
     return src.components.users.delete_user(request_info.user_id, request_info.session_key)
 
 
-@router.get("/log", tags=["Login"])
+@router.get("/log", tags=["Login/LogOut"])
 async def login_user(request_info: LoginDetails):
     """
     This will sign a user in
@@ -63,7 +63,7 @@ async def login_user(request_info: LoginDetails):
     return src.components.users.login_user(request_info.username, request_info.password)
 
 
-@router.put("/log", tags=["Logout"])
+@router.put("/log", tags=["Login/LogOut"])
 async def logout_user(request_info: AuthoDetails):
     """
     This will log a user out

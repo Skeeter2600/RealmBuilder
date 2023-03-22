@@ -1,6 +1,9 @@
+from typing import List
+
 from fastapi import APIRouter
 import src.components.comments
-from src.api.resources.classes import EditComment, NewComment, DeleteComment
+from src.api.resources.request_classes import EditComment, NewComment, DeleteComment
+from src.api.resources.response_classes import CommentResponse
 
 router = APIRouter(
     prefix='/comment',
@@ -8,7 +11,7 @@ router = APIRouter(
 )
 
 
-@router.put("/manage", tags=["Edit"])
+@router.put("/manage", tags=["Edit"], response_model=CommentResponse)
 async def EditComment(request_info: EditComment):
     """
     This will edit a comment's info
@@ -22,7 +25,7 @@ async def EditComment(request_info: EditComment):
     return outcome[0]
 
 
-@router.post("/manage", tags=["New"])
+@router.post("/manage", tags=["New"], response_model=CommentResponse)
 async def NewComment(request_info: NewComment):
     """
     This will create a new comment
@@ -36,7 +39,7 @@ async def NewComment(request_info: NewComment):
     return outcome[0]
 
 
-@router.delete("/manage", tags=["Delete"])
+@router.delete("/manage", tags=["Delete"], response_model=bool)
 async def DeleteComment(request_info: DeleteComment):
     """
     This will delete a comment that a user owns
@@ -46,16 +49,16 @@ async def DeleteComment(request_info: DeleteComment):
                                                   request_info.comment_id,)
 
 
-@router.get("/{comment_id}", tags=["Details"])
-async def comment_info(comment_id):
+@router.get("/{comment_id}", tags=["Details"], response_model=CommentResponse)
+async def commentInfo(comment_id):
     """
-    This will get the info on an npc
+    This will get the info on a comment
     """
     return src.components.comments.get_comment(comment_id)
 
 
-@router.get("/{component_table}/{comment_id}", tags=["Component"])
-async def comment_info(component_table, comment_id):
+@router.get("/{component_table}/{comment_id}", tags=["Component"], response_model=List[CommentResponse])
+async def commentInfo(component_table, comment_id):
     """
     This will get the info on a comment
     """

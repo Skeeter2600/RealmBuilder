@@ -5,6 +5,6 @@ router = APIRouter(
 )
 
 
-@router.get("/", tags=["Online"])
+@router.get("/")
 async def hello_world():
     return dict({'message': 'Ready to go'})

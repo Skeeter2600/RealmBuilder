@@ -1,6 +1,6 @@
-from fastapi import File
+from fastapi import UploadFile
 from pydantic import BaseModel
-from typing import List, Optional
+from typing import List
 
 
 # general classes
@@ -24,7 +24,7 @@ class ElementDetails(BaseModel):
 
 
 # city classes
-class EditCityDets(BaseModel):
+class EditCityInfo(BaseModel):
     name: str
     population: int
     song: str
@@ -38,25 +38,25 @@ class EditCity(BaseModel):
     AuthoDetails: AuthoDetails
     city_id: int
     world_id: int
-    details: EditCityDets
+    details: EditCityInfo
 
 
-class NewCityDets(BaseModel):
+class NewCityInfo(BaseModel):
     world_id: int
     name: str
-    # images: List[File] = None
+    images: List[UploadFile]
     population: int
     song: str
     trades: str
     aesthetic: str
     description: str
-    #associated_npcs: List[ElementList] = None
-    #associated_specials: List[ElementList] = None
+    associated_npcs: List[ElementList]
+    associated_specials: List[ElementList]
 
 
 class NewCity(BaseModel):
     AuthoDetails: AuthoDetails
-    details: NewCityDets
+    details: NewCityInfo
 
 
 class DeleteCity(BaseModel):
@@ -86,7 +86,7 @@ class DeleteComment(BaseModel):
 
 
 # npc classes
-class EditNPCDets(BaseModel):
+class EditNPCInfo(BaseModel):
     name: str
     age: int
     occupation: str
@@ -98,24 +98,24 @@ class EditNPC(BaseModel):
     world_id: int
     AuthoDetails: AuthoDetails
     npc_id: int
-    details: EditNPCDets
+    details: EditNPCInfo
 
 
-class NewNPCDets(BaseModel):
+class NewNPCInfo(BaseModel):
     world_id: int
     name: str
-    #images: list[File]
+    images: List[UploadFile]
     age: int
     occupation: str
     hidden_description: str
-    #associated_cities: list[ElementList]
+    associated_cities: List[ElementList]
 
 
 class NewNPC(BaseModel):
     world_id: int
     AuthoDetails: AuthoDetails
     npc_id: int
-    details: NewNPCDets
+    details: NewNPCInfo
 
 
 class DeleteNPC(BaseModel):
@@ -125,7 +125,7 @@ class DeleteNPC(BaseModel):
     
     
 # special classes
-class EditSpecialDets(BaseModel):
+class EditSpecialInfo(BaseModel):
     name: str
     description: str
     hidden_description: str
@@ -137,22 +137,22 @@ class EditSpecial(BaseModel):
     world_id: int
     AuthoDetails: AuthoDetails
     special_id: int
-    details: EditSpecialDets
+    details: EditSpecialInfo
     
     
-class NewSpecialDets(BaseModel):
+class NewSpecialInfo(BaseModel):
     world_id: int
     name: str
-    #images: List[File]
+    images: List[UploadFile]
     description: str
     hidden_description: str
-    #associated_cities: List[ElementList]
-    #associated_npcs: List[ElementList]
+    associated_cities: List[ElementList]
+    associated_npcs: List[ElementList]
 
 
 class NewSpecial(BaseModel):
     AuthoDetails: AuthoDetails
-    details: NewSpecialDets
+    details: NewSpecialInfo
     
     
 class DeleteSpecial(BaseModel):
@@ -164,7 +164,7 @@ class DeleteSpecial(BaseModel):
 # user classes
 class UserDetails(BaseModel):
     username: str
-    #profile_pic: File
+    profile_pic: UploadFile
     public: bool
     bio: str
 

@@ -1,6 +1,9 @@
+from typing import List
+
 from fastapi import APIRouter
 
-from src.api.resources.classes import AuthoDetails
+from src.api.resources.request_classes import AuthoDetails
+from src.api.resources.response_classes import UserResponse, SimpleResponse
 from src.components.cities import search_for_city
 from src.components.npcs import search_for_npc
 from src.components.specials import search_for_special
@@ -13,7 +16,7 @@ router = APIRouter(
 )
 
 
-@router.get("/city/{world_id}/{param}/{limit}/{page}/", tags=["City"])
+@router.get("/city/{world_id}/{param}/{limit}/{page}/", tags=["City"], response_model=List[SimpleResponse])
 async def CitySearch(request_info: AuthoDetails, param, world_id, limit, page):
     """
     This will search a city by the defined parameters
@@ -22,7 +25,7 @@ async def CitySearch(request_info: AuthoDetails, param, world_id, limit, page):
                            request_info.user_id, request_info.session_key)
 
 
-@router.get("/city/{world_id}/{param}/{limit}/{page}/", tags=["NPC"])
+@router.get("/npc/{world_id}/{param}/{limit}/{page}/", tags=["NPC"], response_model=List[SimpleResponse])
 async def NPCSearch(request_info: AuthoDetails, param, world_id, limit, page):
     """
     This will search a city by the defined parameters
@@ -31,7 +34,7 @@ async def NPCSearch(request_info: AuthoDetails, param, world_id, limit, page):
                           request_info.user_id, request_info.session_key)
 
 
-@router.get("/special/{world_id}/{param}/{limit}/{page}/", tags=["Special"])
+@router.get("/special/{world_id}/{param}/{limit}/{page}/", tags=["Special"], response_model=List[SimpleResponse])
 async def SpecialSearch(request_info: AuthoDetails, param, world_id, limit, page):
     """
     This will search a special by the defined parameters
@@ -40,7 +43,7 @@ async def SpecialSearch(request_info: AuthoDetails, param, world_id, limit, page
                               request_info.user_id, request_info.session_key)
 
 
-@router.get("/user/{param}/{limit}/{page}/", tags=["User"])
+@router.get("/user/{param}/{limit}/{page}/", tags=["User"], response_model=List[UserResponse])
 async def UserSearch(request_info: AuthoDetails, param, limit, page):
     """
     This will for a search a user by the defined parameters
@@ -49,7 +52,7 @@ async def UserSearch(request_info: AuthoDetails, param, limit, page):
                        request_info.user_id, request_info.session_key)
 
 
-@router.get("world/{param}/{limit}/{page}", tags=["World"])
+@router.get("/world/{param}/{limit}/{page}", tags=["World"], response_model=List[SimpleResponse])
 async def WorldSearch(request_info: AuthoDetails, param, limit, page):
     """
     This will search a world by the defined parameters

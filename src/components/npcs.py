@@ -434,7 +434,8 @@ def search_for_npc(param, world, limit, page, user_id, session_key):
 
     :format return: [{ id: npc's id,
                        name: npc name,
-                       reveal_status: revealed(if admin)}]
+                       reveal_status: { admin: if admin in world
+                                        revealed(if admin): True of False}}]
     """
     npc_list = []
     if check_session_key(user_id, session_key):

@@ -1,5 +1,6 @@
 from fastapi import APIRouter
-from pydantic import BaseModel
+
+from src.api.resources.classes import AuthoDetails
 from src.components.cities import search_for_city
 from src.components.npcs import search_for_npc
 from src.components.specials import search_for_special
@@ -10,11 +11,6 @@ router = APIRouter(
     prefix='/search',
     tags=['Search']
 )
-
-
-class AuthoDetails(BaseModel):
-    user_id: int
-    session_key: str
 
 
 @router.get("/city/{world_id}/{param}/{limit}/{page}/", tags=["City"])
@@ -60,4 +56,3 @@ async def WorldSearch(request_info: AuthoDetails, param, limit, page):
     """
     return search_world(param, limit, page,
                         request_info.user_id, request_info.session_key)
-

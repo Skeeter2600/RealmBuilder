@@ -262,6 +262,7 @@ def edit_npc(user_id, session_key, npc_id, world_id, details):
                        age: npc's age
                        occupation: the npc's occupation
                        description: npc description,
+                       hidden_description: npc hidden description
                        revealed: T or F
                      }
 
@@ -274,12 +275,12 @@ def edit_npc(user_id, session_key, npc_id, world_id, details):
 
             edit_request = """
                 UPDATE npcs SET
-                name = %s, age = %s, occupation = %s, description = %s, revealed = %s, edit_date = now()
+                name = %s, age = %s, occupation = %s, description = %s,  hidden_description = %s, revealed = %s, edit_date = now()
                 WHERE id = %s
                 RETURNING id
                 """
             cur.execute(edit_request, (details['name'], details['age'], details['occupation'], details['description'],
-                                       details['revealed'], npc_id))
+                                       details['hidden_description'], details['revealed'], npc_id))
             outcome = cur.fetchall()
 
             if outcome == ():

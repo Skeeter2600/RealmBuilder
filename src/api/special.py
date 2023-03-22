@@ -133,19 +133,4 @@ class SpecialDetails(Resource):
         return src.components.specials.get_special_info(special_id, user_id, session_key, admin)
 
 
-class SpecialSearch(Resource):
-
-    def get(self, world_id, param, limit, page):
-        """
-        This will search a special by the defined parameters
-        """
-        parser = reqparse.RequestParser()
-        parser.add_argument('user_id', type=int)
-        parser.add_argument('session_key', type=str)
-        args = parser.parse_args()
-
-        user_id = args['user_id']
-        session_key = args['session_key']
-
-        return src.components.specials.search_for_special(param, world_id, limit, page, user_id, session_key)
 

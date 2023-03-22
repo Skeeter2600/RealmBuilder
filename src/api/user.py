@@ -1,133 +1,100 @@
-import json
-
-from flask_restful import Resource, reqparse
+from fastapi import APIRouter
+from pydantic import BaseModel
+from PIL import Image
 import src.components.users
 
-
-class UserAccountPublic(Resource):
-    def get(self, user_id):
-        """
-        This will retrieve the info of a user
-        """
-        return src.components.users.get_user_public(user_id)
+router = APIRouter(
+    prefix='/user',
+    tags=['User']
+)
 
 
-class AccountInfo(Resource):
-    def get(self):
-        """
-        This will get a user's private profile
-        """
-        parser = reqparse.RequestParser()
-        parser.add_argument('user_id', type=int)
-        parser.add_argument('session_key', type=str)
-        args = parser.parse_args()
-
-        user_id = args['user_id']
-        session_key = args['session_key']
-
-        outcome = src.components.users.get_user_private(user_id, session_key)
-
-        return outcome
-
-    def put(self):
-        """
-        This will edit a user's profile
-        """
-        parser = reqparse.RequestParser()
-        parser.add_argument('user_id', type=int)
-        parser.add_argument('session_key', type=str)
-        parser.add_argument('details', type=json)
-        args = parser.parse_args()
-
-        user_id = args['user_id']
-        session_key = args['session_key']
-        details = args['details']
-
-        outcome = src.components.users.edit_account(user_id, session_key, details)
-
-        if outcome:
-            return src.components.users.get_user_private(user_id, session_key)
-
-        return outcome
-
-    def post(self):
-        """
-        This will create a new user
-        """
-        parser = reqparse.RequestParser()
-        parser.add_argument('username', type=str)
-        parser.add_argument('password', type=str)
-        parser.add_argument('email', type=str)
-        args = parser.parse_args()
-
-        username = args['username']
-        password = args['password']
-        email = args['email']
-
-        outcome = src.components.users.create_user(username, password, email)
-
-        if outcome == "Success!":
-            return src.components.users.login_user(username, password)
-
-        return outcome
-
-    def delete(self):
-        """
-        This will delete a user's account
-        """
-        parser = reqparse.RequestParser()
-        parser.add_argument('user_id', type=int)
-        parser.add_argument('session_key', type=str)
-        args = parser.parse_args()
-
-        user_id = args['user_id']
-        session_key = args['session_key']
-
-        outcome = src.components.users.delete_user(user_id, session_key)
-
-        return outcome
+@router.get("/{user_id}", tags=["Details", "Public"])
+async def get_user_details_public(user_id):
+    """
+    This will retrieve the info of a user
+    """
+    return src.components.users.get_user_public(user_id)
 
 
-class LoginLogout(Resource):
-
-    def get(self):
-        parser = reqparse.RequestParser()
-        parser.add_argument('username', type=str)
-        parser.add_argument('password', type=str)
-        args = parser.parse_args()
-
-        username = args['username']
-        password = args['password']
-
-        outcome = src.components.users.login_user(username, password)
-
-        return outcome
-
-    def put(self):
-        parser = reqparse.RequestParser()
-        parser.add_argument('user_id',type=int)
-        parser.add_argument('session_key', type=str)
-        args = parser.parse_args()
-
-        user_id = args['user_id']
-        session_key = args['session_key']
-
-        outcome = src.components.users.logout_user(user_id, session_key)
-        return outcome
+class UserDetails(BaseModel):
+    user_id: int
+    session_key: str
 
 
-class UserSearch(Resource):
+@router.get("/", tags=["Details", "Private"])
+async def get_user_details_private(request_info: UserDetails):
+    """
+    This will retrieve the info of a user
+    """
+    return src.components.users.get_user_private(request_info.user_id, request_info.session_key)
 
-    def get(self, param, limit, page):
-        parser = reqparse.RequestParser()
-        parser.add_argument('user_id', type=int)
-        parser.add_argument('session_key', type=str)
-        args = parser.parse_args()
 
-        user_id = args['user_id']
-        session_key = args['session_key']
+class UpdateDetails(BaseModel):
+    username: str
+    profile_pic: Image
+    public: bool
+    bio: str
 
-        outcome = src.components.users.search_user(param, limit, page, user_id, session_key)
 
-        return outcome
+class EditUserDetails(BaseModel):
+    user_id: int
+    session_key: str
+    details: UpdateDetails
 
+
+@router.put("/", tags=["Edit"])
+async def edit_user_details(request_info: EditUserDetails):
+    """
+    This will edit a user's profile
+    """
+    return src.components.users.edit_account(request_info.user_id, request_info.session_key,
+                                             request_info.details)
+
+
+class NewUser(BaseModel):
+    username: str
+    password: str
+    email: str
+
+
+@router.post("/", tags=["New"])
+async def new_user(request_info: NewUser):
+    """
+    This will create a new user
+    """
+    outcome = src.components.users.create_user(request_info.username, request_info.password,
+                                               request_info.email)
+    if outcome == "Success!":
+        return src.components.users.login_user(request_info.username, request_info.password)
+
+    return outcome
+
+
+@router.delete("/", tags=["Delete"])
+async def delete_user(request_info: UserDetails):
+    """
+    This will delete a user's account
+    """
+    return src.components.users.delete_user(request_info.user_id, request_info.session_key)
+
+
+class LoginDetails(BaseModel):
+    username: str
+    password: str
+
+
+@router.get("/log", tags=["Login"])
+async def login_user(request_info: LoginDetails):
+    """
+    This will sign a user in
+    """
+    return src.components.users.login_user(request_info.username, request_info.password)
+
+
+@router.put("/log", tags=["Logout"])
+async def logout_user(request_info: UserDetails):
+    """
+    This will log a user out
+    """
+    return src.components.users.logout_user(request_info.user_id, request_info.session_key)

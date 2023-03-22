@@ -243,15 +243,15 @@ def get_owner(world_id):
             "profile_pic": ''}
 
 
-def get_world_user_list(world_id, user_id, session_key):
+def get_world_admin_list(world_id, user_id, session_key):
     """
     This function will get a list of all users who
-    are a part of a world
+    are admins of a world
     :param world_id: the id of the world being checked
     :param user_id: the id of the user requesting the edit
     :param session_key: the session key of the user
 
-    :return: a list of the users in a world
+    :return: a list of the admins in a world
 
     :format return:
             [{  id:   user id,
@@ -276,6 +276,34 @@ def get_world_user_list(world_id, user_id, session_key):
             outcome = cur.fetchall()
             for admin in outcome:
                 user_list.append(admin)
+
+            conn.close()
+            return user_list
+    return []
+
+
+def get_world_user_list(world_id, user_id, session_key):
+    """
+    This function will get a list of all users who
+    are a part of a world
+    :param world_id: the id of the world being checked
+    :param user_id: the id of the user requesting the edit
+    :param session_key: the session key of the user
+
+    :return: a list of the users in a world
+
+    :format return:
+            [{  id:   user id,
+                name: user's name,
+                profile_picture: user's profile picture
+            }]
+    """
+    if check_session_key(user_id, session_key):
+        if check_viewable(world_id, user_id):
+            conn = connect()
+            cur = conn.cursor()
+
+            user_list = []
 
             # add the members to the list
             member_request = """
@@ -330,8 +358,9 @@ def get_world_details(world_id, user_id, session_key):
                                profile_picture: user's profile picture}]
             }
     """
-    if check_session_key(user_id, session_key):
-        if check_viewable(world_id, user_id):
+    access_check = check_viewable(world_id, user_id)
+    if access_check["viewable"]:
+        if check_session_key(user_id, session_key) or access_check["public"]:
             conn = connect()
             cur = conn.cursor()
             world_info = {

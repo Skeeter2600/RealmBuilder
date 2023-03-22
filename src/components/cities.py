@@ -218,7 +218,7 @@ def delete_city(user_id, session_key, city_id, world_id):
 def edit_city(user_id, session_key, city_id, world_id, details):
     """
     This function will modify the elements of a city
-    in a world, give te user can edit it
+    in a world, give the user can edit it
 
     :param user_id: the id of the user editing
     :param session_key: the session_key of the user editing

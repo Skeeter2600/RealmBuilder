@@ -1,5 +1,6 @@
 from src.utils.db_tools import check_session_key
 from src.utils.db_utils import connect
+from src.utils.permissions import check_editable
 
 
 def rebuild_special_image_linker():
@@ -39,19 +40,28 @@ def add_special_image_association(special_id, image, user_id, session_key):
     if check_session_key(user_id, session_key):
         conn = connect()
         cur = conn.cursor()
-        insert_request = """
-            INSERT INTO special_image_linker(special_id, image) VALUES
-            (%s, %s)
-            RETURNING id
-            """
-        cur.execute(insert_request, (special_id, image))
-        outcome = cur.fetchall()
+        world_id_check = """
+            SELECT world_id FROM specials
+            WHERE id = %s
+        """
+        cur.execute(world_id_check, [special_id])
+        world_id = cur.fetchall()[0][0]
 
-        conn.commit()
+        if check_editable(world_id, user_id, session_key):
+            insert_request = """
+                INSERT INTO special_image_linker(special_id, image) VALUES
+                (%s, %s)
+                RETURNING id
+                """
+            cur.execute(insert_request, (special_id, image))
+            outcome = cur.fetchall()
+
+            conn.commit()
+            conn.close()
+
+            if outcome != ():
+                return True
         conn.close()
-
-        if outcome != ():
-            return True
     return False
 
 
@@ -70,14 +80,24 @@ def remove_special_image_association(special_id, image_id, user_id, session_key)
     if check_session_key(user_id, session_key):
         conn = connect()
         cur = conn.cursor()
-        delete_request = """
-            DELETE FROM special_image_linker WHERE
-            special_id = %s AND id = %s
-            """
-        cur.execute(delete_request, (special_id, image_id))
-        conn.commit()
+
+        world_id_check = """
+                    SELECT world_id FROM specials
+                    WHERE id = %s
+                """
+        cur.execute(world_id_check, [special_id])
+        world_id = cur.fetchall()[0][0]
+
+        if check_editable(world_id, user_id, session_key):
+            delete_request = """
+                DELETE FROM special_image_linker WHERE
+                special_id = %s AND id = %s
+                """
+            cur.execute(delete_request, (special_id, image_id))
+            conn.commit()
+            conn.close()
+            return True
         conn.close()
-        return True
     return False
 
 

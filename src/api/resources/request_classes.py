@@ -33,6 +33,37 @@ class ImageDelete(BaseModel):
     AuthoDetails: AuthoDetails
 
 
+# linking classes
+class CityNPCLinking(BaseModel):
+    city_id: int
+    npc_id: int
+    AuthoDetails: AuthoDetails
+
+
+class CitySpecialLinking(BaseModel):
+    city_id: int
+    special_id: int
+    AuthoDetails: AuthoDetails
+
+
+class NPCNPCLinking(BaseModel):
+    npc_one_id: int
+    npc_two_id: int
+    AuthoDetails: AuthoDetails
+
+
+class NPCSpecialLinking(BaseModel):
+    npc_id: int
+    special_id: int
+    AuthoDetails: AuthoDetails
+
+
+class WorldUserLinking(BaseModel):
+    world_id: int
+    user_id: id
+    AuthoDetails: AuthoDetails
+
+
 # city classes
 class EditCityInfo(BaseModel):
     name: str
@@ -229,3 +260,4 @@ class JoinWorldPrivate(BaseModel):
     world_id: int
     AuthoDetails: AuthoDetails
     admin_id: int
+

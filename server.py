@@ -1,5 +1,11 @@
 from fastapi import FastAPI
 
+import src.api.element_linkers.city_npc_link as city_npc_linker
+import src.api.element_linkers.city_special_link as city_special_linker
+import src.api.element_linkers.npc_npc_link as npc_npc_linker
+import src.api.element_linkers.npc_special_link as npc_special_linker
+import src.api.element_linkers.world_user_link as world_user_linker
+
 import src.api.elements.city as city
 import src.api.elements.comment as comment
 import src.api.elements.npc as npc
@@ -18,6 +24,11 @@ import src.api.resources.search as search
 app = FastAPI()
 
 # element-linker folder
+app.include_router(city_npc_linker.router)
+app.include_router(city_special_linker.router)
+app.include_router(npc_npc_linker.router)
+app.include_router(npc_special_linker.router)
+app.include_router(world_user_linker.router)
 
 # element folder
 app.include_router(city.router)

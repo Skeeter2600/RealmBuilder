@@ -4,7 +4,8 @@ from fastapi import APIRouter
 import src.components.worlds as worlds
 from src.api.resources.request_classes import EditWorld, NewWorld, DeleteWorld, JoinWorldPublic, JoinWorldPrivate, \
     AuthoDetails
-from src.api.resources.response_classes import WorldResponse, UserResponse
+from src.api.resources.response_classes import WorldResponse, UserResponse, NewWorldElements
+from src.linkers.world_user_linker import get_new_elements
 
 router = APIRouter(
     prefix='/world',
@@ -102,3 +103,12 @@ async def get_world(request_info: AuthoDetails, world_id):
     """
     return worlds.get_world_details(world_id,
                                     request_info.user_id, request_info.session_key)
+
+
+@router.get('/new/{world_id}', tags=['Linked'], response_model=NewWorldElements)
+async def get_new_elements_in_world(request_info: AuthoDetails, world_id):
+    """
+    This function will get new elements in a world
+    that the user hasn't seen yet
+    """
+    return get_new_elements(world_id, request_info.user_id, request_info.session_key)

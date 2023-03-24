@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta
 
 from src.utils.db_tools import check_session_key
-from src.utils.permissions import check_viewable
+from src.utils.permissions import check_viewable, check_editable
 from src.utils.db_utils import connect
 
 """
@@ -54,9 +54,10 @@ def add_world_user_association(world_id, user_id, requester_id, session_key):
 
     :return: True if successful, False if not
     """
-    if check_session_key(requester_id, session_key):
+    if check_session_key(requester_id, session_key) and check_editable(world_id, user_id, session_key):
         conn = connect()
         cur = conn.cursor()
+
         insert_request = """
             INSERT INTO world_user_linker(world_id, user_id) VALUES
             (%s, %s)
@@ -85,7 +86,7 @@ def delete_world_user_association(world_id, user_id, requester_id, session_key):
 
     :return: True if successful, False if not
     """
-    if check_session_key(requester_id, session_key):
+    if check_session_key(requester_id, session_key) and check_editable(world_id, user_id, session_key):
         conn = connect()
         cur = conn.cursor()
         delete_request = """
@@ -136,7 +137,7 @@ def get_new_elements(world_id, user_id, session_key):
                 new_check = outcome[1]
 
                 # update times if last checked is older than 15 min
-                if last_checked > datetime.now() - timedelta(minutes=15):
+                if last_checked > (datetime.now() - timedelta(minutes=15)):
                     new_check = last_checked
                     last_checked = datetime.now()
             else:

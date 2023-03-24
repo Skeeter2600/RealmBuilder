@@ -113,6 +113,21 @@ class WorldResponse(BaseModel):
     user_list: List[UserResponse]
 
 
+class NewWorldElements(BaseModel):
+    """
+    { npcs:     [{ id: npc id,
+                           name: npc name}],
+              cities:   [{ id: city id,
+                           name: city name}],
+              specials: [{ id: special id,
+                           name: special name}]
+            }
+    """
+    npcs: List[SimpleResponse]
+    cities: List[SimpleResponse]
+    specials: List[SimpleResponse]
+
+
 # search responses
 class SearchAdminChecks(BaseModel):
     """

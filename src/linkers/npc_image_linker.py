@@ -1,5 +1,6 @@
 from src.utils.db_tools import check_session_key
 from src.utils.db_utils import connect
+from src.utils.permissions import check_editable
 
 
 def rebuild_npc_image_linker():
@@ -39,27 +40,37 @@ def add_npc_image_association(npc_id, image, user_id, session_key):
     if check_session_key(user_id, session_key):
         conn = connect()
         cur = conn.cursor()
-        insert_request = """
-            INSERT INTO npc_image_linker(npc_id, image) VALUES
-            (%s, %s)
-            """
-        cur.execute(insert_request, (npc_id, image))
-        outcome = cur.fetchall()
 
-        conn.commit()
+        world_id_check = """
+                            SELECT world_id FROM npcs
+                            WHERE id = %s
+                            """
+        cur.execute(world_id_check, [npc_id])
+        world_id = cur.fetchall()[0][0]
+
+        if check_editable(world_id, user_id, session_key):
+            insert_request = """
+                INSERT INTO npc_image_linker(npc_id, image) VALUES
+                (%s, %s)
+                """
+            cur.execute(insert_request, (npc_id, image))
+            outcome = cur.fetchall()
+
+            conn.commit()
+            conn.close()
+
+            if outcome != ():
+                return True
         conn.close()
-
-        if outcome != ():
-            return True
     return False
 
 
-def remove_npc_image_association(npc_id, image, user_id, session_key):
+def remove_npc_image_association(npc_id, image_id, user_id, session_key):
     """
     This function will remove an association between
     a npc and an image from the linker table
 
-    :param image: the image file
+    :param image_id : the id of the image file
     :param npc_id: the id of the npc
     :param user_id: the id of the user requesting this
     :param session_key: the user's session key
@@ -69,14 +80,25 @@ def remove_npc_image_association(npc_id, image, user_id, session_key):
     if check_session_key(user_id, session_key):
         conn = connect()
         cur = conn.cursor()
-        delete_request = """
-            DELETE FROM npc_image_linker WHERE
-            npc_id = %s AND image = %s
-            """
-        cur.execute(delete_request, (npc_id, image))
-        conn.commit()
+
+        world_id_check = """
+                    SELECT world_id FROM npcs
+                    WHERE id = %s
+                    """
+        cur.execute(world_id_check, [npc_id])
+        world_id = cur.fetchall()[0][0]
+
+        if check_editable(world_id, user_id, session_key):
+
+            delete_request = """
+                DELETE FROM npc_image_linker WHERE
+                npc_id = %s AND id = %s
+                """
+            cur.execute(delete_request, (npc_id, image_id))
+            conn.commit()
+            conn.close()
+            return True
         conn.close()
-        return True
     return False
 
 

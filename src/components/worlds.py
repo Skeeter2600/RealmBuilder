@@ -1,4 +1,5 @@
 from src.components.comments import get_component_comments
+from src.components.likes_dislikes import get_likes_dislike
 from src.linkers.world_user_linker import get_new_elements
 from src.utils.db_tools import check_session_key
 from src.utils.db_utils import connect
@@ -243,15 +244,15 @@ def get_owner(world_id):
             "profile_pic": ''}
 
 
-def get_world_user_list(world_id, user_id, session_key):
+def get_world_admin_list(world_id, user_id, session_key):
     """
     This function will get a list of all users who
-    are a part of a world
+    are admins of a world
     :param world_id: the id of the world being checked
     :param user_id: the id of the user requesting the edit
     :param session_key: the session key of the user
 
-    :return: a list of the users in a world
+    :return: a list of the admins in a world
 
     :format return:
             [{  id:   user id,
@@ -276,6 +277,34 @@ def get_world_user_list(world_id, user_id, session_key):
             outcome = cur.fetchall()
             for admin in outcome:
                 user_list.append(admin)
+
+            conn.close()
+            return user_list
+    return []
+
+
+def get_world_user_list(world_id, user_id, session_key):
+    """
+    This function will get a list of all users who
+    are a part of a world
+    :param world_id: the id of the world being checked
+    :param user_id: the id of the user requesting the edit
+    :param session_key: the session key of the user
+
+    :return: a list of the users in a world
+
+    :format return:
+            [{  id:   user id,
+                name: user's name,
+                profile_picture: user's profile picture
+            }]
+    """
+    if check_session_key(user_id, session_key):
+        if check_viewable(world_id, user_id):
+            conn = connect()
+            cur = conn.cursor()
+
+            user_list = []
 
             # add the members to the list
             member_request = """
@@ -309,6 +338,12 @@ def get_world_details(world_id, user_id, session_key):
 
     :format return:
             { valid: able to view details,
+              like_dislike_info: {
+                  likes: int of likes,
+                  dislikes: int of dislikes
+                  user_like: is user liked it (True or False),
+                  user_dislike: is user disliked it (True or False)
+              }
               name: world name,
               description: world description,
               npcs:     [{ id: npc id,
@@ -330,12 +365,14 @@ def get_world_details(world_id, user_id, session_key):
                                profile_picture: user's profile picture}]
             }
     """
-    if check_session_key(user_id, session_key):
-        if check_viewable(world_id, user_id):
+    access_check = check_viewable(world_id, user_id)
+    if access_check["viewable"]:
+        if check_session_key(user_id, session_key) or access_check["public"]:
             conn = connect()
             cur = conn.cursor()
             world_info = {
                 'valid': True,
+                'like_dislike_info': get_likes_dislike(user_id, world_id, 'worlds'),
                 'name': '',
                 'description': '',
                 'npcs': [],
@@ -369,6 +406,12 @@ def get_world_details(world_id, user_id, session_key):
                 return world_info
 
     return {'valid': False,
+            'like_dislike_info':
+                {'likes': 0,
+                 'dislikes': 0,
+                 'user_like': False,
+                 'user_dislike': False
+                 },
             'name': '',
             'description': '',
             'npcs': [],

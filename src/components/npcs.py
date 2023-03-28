@@ -1,3 +1,4 @@
+from src.components.likes_dislikes import get_likes_dislike
 from src.linkers.npc_npc_linker import get_associated_npcs
 from src.linkers.npc_special_linker import get_specials_by_npc
 from src.linkers.city_npc_linker import get_cities_by_npc
@@ -262,6 +263,7 @@ def edit_npc(user_id, session_key, npc_id, world_id, details):
                        age: npc's age
                        occupation: the npc's occupation
                        description: npc description,
+                       hidden_description: npc hidden description
                        revealed: T or F
                      }
 
@@ -274,12 +276,12 @@ def edit_npc(user_id, session_key, npc_id, world_id, details):
 
             edit_request = """
                 UPDATE npcs SET
-                name = %s, age = %s, occupation = %s, description = %s, revealed = %s, edit_date = now()
+                name = %s, age = %s, occupation = %s, description = %s,  hidden_description = %s, revealed = %s, edit_date = now()
                 WHERE id = %s
                 RETURNING id
                 """
             cur.execute(edit_request, (details['name'], details['age'], details['occupation'], details['description'],
-                                       details['revealed'], npc_id))
+                                       details['hidden_description'], details['revealed'], npc_id))
             outcome = cur.fetchall()
 
             if outcome == ():
@@ -307,10 +309,12 @@ def get_npc_info(user_id, session_key, npc_id, admin):
 
     :format return: { name: npc name,
                       images: [images associated with npc],
-                      likes: npc likes,
-                      dislikes: npc dislikes,
-                      user_like: is user liked it (True or False),
-                      user_dislike: is user disliked it (True or False),
+                      like_dislike_info: {
+                          'likes': number of likes,
+                          'dislikes': number of dislikes,
+                          'user_like': bool of liked,
+                          'user_dislike': bool of disliked
+                      }
                       age: npc age,
                       occupation: npc occupation,
                       description: npc description,
@@ -328,10 +332,12 @@ def get_npc_info(user_id, session_key, npc_id, admin):
     """
     npc_info = {'name': '',
                 'images': [],
-                'likes': 0,
-                'dislikes': 0,
-                'user_like': False,
-                'user_dislike': False,
+                'like_dislike_info':
+                    {'likes': 0,
+                     'dislikes': 0,
+                     'user_like': False,
+                     'user_dislike': False
+                     },
                 'age': '',
                 'occupation': "",
                 'description': "",
@@ -386,26 +392,7 @@ def get_npc_info(user_id, session_key, npc_id, admin):
 
                 npc_info['admin_content'] = admin_content
 
-            likes_dislike_query = """
-                    SELECT COUNT(*) AS total,
-                    sum(case when like_dislike = 'T' then 1 else 0 end) AS likes,
-                    sum(case when like_dislike = 'F' then 1 else 0 end) AS dislikes,
-                    sum(case when like_dislike = 'T' AND user_id = %s then 1 else 0 end) AS user_like,
-                    sum(case when like_dislike = 'F' AND user_id = %s then 1 else 0 end) AS user_dislike
-                    FROM likes_dislikes
-                    WHERE component_id = %s AND component_type = 'npcs'
-                """
-
-            cur.execute(likes_dislike_query, [user_id, user_id, npc_id])
-            like_dislike_outcome = cur.fetchall()
-
-            if len(like_dislike_outcome) > 0 and (like_dislike_outcome[0][0] != 0):
-                like_dislike_outcome = like_dislike_outcome[0]
-
-                npc_info['likes'] = like_dislike_outcome[1]
-                npc_info['dislikes'] = like_dislike_outcome[2]
-                npc_info['user_like'] = (like_dislike_outcome[3] > 0)
-                npc_info['user_dislike'] = (like_dislike_outcome[4] > 0)
+            npc_info['like_dislike_info'] = get_likes_dislike(user_id, npc_id, 'npcs')
 
         conn.close()
 
@@ -429,11 +416,11 @@ def reveal_hidden_npc(user_id, session_key, world_id, npc_id):
         cur = conn.cursor()
 
         reveal_query = """
-        UPDATE npcs SET
-        description = concat(description, '\n\nREVEAL\n\n', hidden_description),
-        hidden_description = ''
-        WHERE id = %s
-        returning id
+            UPDATE npcs SET
+            description = concat(description, '\n\nREVEAL\n\n', hidden_description),
+            hidden_description = ''
+            WHERE id = %s
+            returning id
         """
         cur.execute(reveal_query, [npc_id])
         outcome = cur.fetchall()
@@ -462,7 +449,8 @@ def search_for_npc(param, world, limit, page, user_id, session_key):
 
     :format return: [{ id: npc's id,
                        name: npc name,
-                       reveal_status: revealed(if admin)}]
+                       reveal_status: { admin: if admin in world
+                                        revealed(if admin): True of False}}]
     """
     npc_list = []
     if check_session_key(user_id, session_key):

@@ -25,9 +25,9 @@ def rebuild_admins_table():
     conn.close()
 
 
-def add_world_user_association(world_id, user_id, requester_id, session_key):
+def add_world_user_admin_association(world_id, user_id, requester_id, session_key):
     """
-    This function will add an association between
+    This function will add an admin association between
     a world and a user to the linker table
 
     :param world_id: the id of the city
@@ -55,9 +55,9 @@ def add_world_user_association(world_id, user_id, requester_id, session_key):
     return False
 
 
-def delete_world_user_association(world_id, user_id, requester_id, session_key):
+def delete_world_user_admin_association(world_id, user_id, requester_id, session_key):
     """
-    This function will add an association between
+    This function will add an admin association between
     a world and a user to the linker table
 
     :param world_id: the id of the city
@@ -71,7 +71,7 @@ def delete_world_user_association(world_id, user_id, requester_id, session_key):
         conn = connect()
         cur = conn.cursor()
         delete_request = """
-            DELETE FROM world_user_linker WHERE
+            DELETE FROM admins WHERE
             world_id = %s AND user_id = %s
             """
         cur.execute(delete_request, (world_id, user_id))

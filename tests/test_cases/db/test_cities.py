@@ -42,10 +42,12 @@ class MyTestCase(unittest.TestCase):
 
         expected = {'name': 'Test',
                     'images': [],
-                    'likes': 0,
-                    'dislikes': 0,
-                    'user_like': False,
-                    'user_dislike': False,
+                    'like_dislike_info':
+                        {'likes': 0,
+                         'dislikes': 0,
+                         'user_like': False,
+                         'user_dislike': False
+                         },
                     'population': 123,
                     'song': 'test',
                     'trades': 'test',
@@ -61,10 +63,12 @@ class MyTestCase(unittest.TestCase):
         outcome = get_city(ryan_r_info[1], ryan_r_info[0], city_id, False)
         self.assertEqual(outcome, {'name': '',
                                    'images': [],
-                                   'likes': 0,
-                                   'dislikes': 0,
-                                   'user_like': False,
-                                   'user_dislike': False,
+                                   'like_dislike_info':
+                                       {'likes': 0,
+                                        'dislikes': 0,
+                                        'user_like': False,
+                                        'user_dislike': False
+                                        },
                                    'population': 0,
                                    'song': '',
                                    'trades': '',
@@ -109,10 +113,12 @@ class MyTestCase(unittest.TestCase):
 
         success_expected = {'name': 'Jamestown',
                             'images': [],
-                            'likes': 0,
-                            'dislikes': 0,
-                            'user_like': False,
-                            'user_dislike': False,
+                            'like_dislike_info':
+                                {'likes': 0,
+                                 'dislikes': 0,
+                                 'user_like': False,
+                                 'user_dislike': False
+                                 },
                             'population': 28712,
                             'song': 'https://www.youtube.com/watch?v=5KiAWfu7cu8',
                             'trades': 'Furniture',

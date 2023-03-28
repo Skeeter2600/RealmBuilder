@@ -1,6 +1,6 @@
 from src.utils.db_tools import check_session_key
 from src.utils.db_utils import connect
-from src.utils.permissions import check_editable
+from src.utils.permissions import check_editable, check_viewable
 
 
 def rebuild_npc_special_linker():
@@ -25,6 +25,40 @@ def rebuild_npc_special_linker():
     conn.close()
 
 
+def check_same_world(npc_id, special_id):
+    """
+    This function will check if two elements are in
+    the same world, which would allow a link
+
+    :param npc_id: the id of the npc
+    :param special_id: the id of the special
+
+    :return: -1 if no link, the world id if they do
+    """
+    conn = connect()
+    cur = conn.cursor()
+
+    world_id_check = """
+                    SELECT world_id FROM specials
+                    WHERE id = %s
+                """
+    cur.execute(world_id_check, [special_id])
+    special_world_id = cur.fetchall()[0][0]
+
+    world_id_check = """
+               SELECT world_id FROM npcs
+               WHERE id = %s
+            """
+    cur.execute(world_id_check, [npc_id])
+    npc_world_id = cur.fetchall()[0][0]
+    conn.close()
+
+    if npc_world_id == special_world_id:
+        return npc_world_id
+
+    return -1
+
+
 def add_npc_special_association(npc_id, special_id, user_id, session_key):
     """
     This function will add an association between
@@ -38,21 +72,25 @@ def add_npc_special_association(npc_id, special_id, user_id, session_key):
     :return: True if successful, False if not
     """
     if check_session_key(user_id, session_key):
-        conn = connect()
-        cur = conn.cursor()
-        insert_request = """
-            INSERT INTO npc_special_linker(npc_id, special_id) VALUES
-            (%s, %s)
-            RETURNING id
-            """
-        cur.execute(insert_request, (npc_id, special_id))
-        outcome = cur.fetchall()
+        world_id = check_same_world(npc_id, special_id)
 
-        conn.commit()
-        conn.close()
+        if world_id > 0:
+            if check_editable(world_id, user_id, session_key):
+                conn = connect()
+                cur = conn.cursor()
+                insert_request = """
+                    INSERT INTO npc_special_linker(npc_id, special_id) VALUES
+                    (%s, %s)
+                    RETURNING id
+                    """
+                cur.execute(insert_request, (npc_id, special_id))
+                outcome = cur.fetchall()
 
-        if outcome != ():
-            return True
+                conn.commit()
+                conn.close()
+
+                if outcome != ():
+                    return True
     return False
 
 
@@ -69,16 +107,21 @@ def remove_npc_special_association(npc_id, special_id, user_id, session_key):
     :return: True if successful, False if not
     """
     if check_session_key(user_id, session_key):
-        conn = connect()
-        cur = conn.cursor()
-        delete_request = """
-            DELETE FROM npc_special_linker WHERE
-            npc_id = %s AND special_id = %s
-            """
-        cur.execute(delete_request, (npc_id, special_id))
-        conn.commit()
-        conn.close()
-        return True
+        world_id = check_same_world(npc_id, special_id)
+
+        if world_id > 0:
+            if check_editable(world_id, user_id, session_key):
+                conn = connect()
+                cur = conn.cursor()
+
+                delete_request = """
+                    DELETE FROM npc_special_linker WHERE
+                    npc_id = %s AND special_id = %s
+                    """
+                cur.execute(delete_request, (npc_id, special_id))
+                conn.commit()
+                conn.close()
+                return True
     return False
 
 
@@ -113,16 +156,19 @@ def get_specials_by_npc(user_id, session_key, npc_id):
                         INNER JOIN specials ON npc_special_linker.special_id = specials.id
                     WHERE npc_id = %s
                     """
+            cur.execute(special_query, [npc_id])
         else:
-            special_query = """
-                SELECT specials.id, name FROM npc_special_linker
-                    INNER JOIN specials ON npc_special_linker.special_id = specials.id
-                WHERE npc_id = %s AND specials.revealed = 't'
-                """
-        cur.execute(special_query, [npc_id])
+            if check_viewable(world_id, user_id):
+                special_query = """
+                    SELECT specials.id, name FROM npc_special_linker
+                        INNER JOIN specials ON npc_special_linker.special_id = specials.id
+                    WHERE npc_id = %s AND specials.revealed = 't'
+                    """
+                cur.execute(special_query, [npc_id])
+
         for npc in cur.fetchall():
-            outcome.append(({'id': npc[0],
-                              'name': npc[1]}))
+            outcome.append({'id': npc[0],
+                            'name': npc[1]})
         conn.close()
 
     return outcome
@@ -159,13 +205,16 @@ def get_npcs_by_special(user_id, session_key, special_id):
                     INNER JOIN npcs ON npc_special_linker.npc_id = npcs.id
                 WHERE special_id = %s
                 """
+            cur.execute(npc_query, [special_id])
         else:
-            npc_query = """
-                SELECT npcs.id, name FROM npc_special_linker
-                    INNER JOIN npcs ON npc_special_linker.npc_id = npcs.id
-                WHERE special_id = %s AND npcs.revealed = 't'
-                """
-        cur.execute(npc_query, [special_id])
+            if check_viewable(world_id, user_id):
+                npc_query = """
+                    SELECT npcs.id, name FROM npc_special_linker
+                        INNER JOIN npcs ON npc_special_linker.npc_id = npcs.id
+                    WHERE special_id = %s AND npcs.revealed = 't'
+                    """
+                cur.execute(npc_query, [special_id])
+
         for npc in cur.fetchall():
             outcome.append(({'id': npc[0],
                              'name': npc[1]}))

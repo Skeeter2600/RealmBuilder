@@ -1,3 +1,4 @@
+from src.components.likes_dislikes import get_likes_dislike
 from src.utils.permissions import check_editable
 from src.linkers.city_image_linker import get_associated_city_images
 from src.linkers.city_npc_linker import get_npcs_by_city
@@ -84,9 +85,11 @@ def add_city(user_id, session_key, details):
                     length = len(details['images'])
                     i = 0
                     while i < length - 1:
-                        add_values = add_values + '(' + str(city_id) + ', ' + str(details['images'][i]) + '), '
+                        add_values = add_values + '(' + str(city_id) + ', ' + \
+                                     str(details['images'][i]) + '), '
                         i += 1
-                    add_values = add_values + '(' + str(city_id) + ', ' + str(details['images'][i]) + ') '
+                    add_values = add_values + '(' + str(city_id) + ', ' + \
+                                 str(details['images'][i]) + ') '
 
                     add_values = add_values + ' returning id'
                     image_add_request = image_add_request + add_values
@@ -105,9 +108,11 @@ def add_city(user_id, session_key, details):
                     length = len(details['associated_npcs'])
                     i = 0
                     while i < length - 1:
-                        add_values = add_values + '(' + str(city_id) + ', ' + str(details['associated_npcs'][i]) + '), '
+                        add_values = add_values + '(' + str(city_id) + ', ' + \
+                                     str(details['associated_npcs'][i]) + '), '
                         i += 1
-                    add_values = add_values + '(' + str(city_id) + ', ' + str(details['associated_npcs'][i]) + ') '
+                    add_values = add_values + '(' + str(city_id) + ', ' + \
+                                    str(details['associated_npcs'][i]) + ') '
 
                     add_values = add_values + ' returning id'
                     npc_add_request = npc_add_request + add_values
@@ -130,7 +135,8 @@ def add_city(user_id, session_key, details):
                             details['associated_specials'][i]) + '), '
                         i += 1
 
-                    add_values = add_values + '(' + str(city_id) + ', ' + str(details['associated_specials'][i]) + ') '
+                    add_values = add_values + '(' + str(city_id) + ', ' + \
+                                    str(details['associated_specials'][i]) + ') '
 
                     add_values = add_values + ' returning id'
                     special_add_request = special_add_request + add_values
@@ -219,7 +225,7 @@ def delete_city(user_id, session_key, city_id, world_id):
 def edit_city(user_id, session_key, city_id, world_id, details):
     """
     This function will modify the elements of a city
-    in a world, give te user can edit it
+    in a world, give the user can edit it
 
     :param user_id: the id of the user editing
     :param session_key: the session_key of the user editing
@@ -306,10 +312,12 @@ def get_city(user_id, session_key, city_id, admin):
 
     :format return: { name: city name,
                       images: [images associated with npc],
-                      likes: city likes,
-                      dislikes: city dislikes,
-                      user_like: is user liked it (True or False),
-                      user_dislike: is user disliked it (True or False),
+                      like_dislike_info: {
+                          'likes': number of likes,
+                          'dislikes': number of dislikes,
+                          'user_like': bool of liked,
+                          'user_dislike': bool of disliked
+                      }
                       population: city population,
                       song: city song,
                       trades: city trades,
@@ -327,10 +335,12 @@ def get_city(user_id, session_key, city_id, admin):
     """
     city_info = {'name': '',
                  'images': [],
-                 'likes': 0,
-                 'dislikes': 0,
-                 'user_like': False,
-                 'user_dislike': False,
+                 'like_dislike_info':
+                     {'likes': 0,
+                      'dislikes': 0,
+                      'user_like': False,
+                      'user_dislike': False
+                      },
                  'population': 0,
                  'song': '',
                  'trades': '',
@@ -386,26 +396,7 @@ def get_city(user_id, session_key, city_id, admin):
 
                 city_info['admin_content'] = admin_content
 
-            likes_dislike_query = """
-                    SELECT COUNT(*) AS total,
-                    sum(case when like_dislike = 'T' then 1 else 0 end) AS likes,
-                    sum(case when like_dislike = 'F' then 1 else 0 end) AS dislikes,
-                    sum(case when like_dislike = 'T' AND user_id = %s then 1 else 0 end) AS user_like,
-                    sum(case when like_dislike = 'F' AND user_id = %s then 1 else 0 end) AS user_dislike
-                    FROM likes_dislikes
-                    WHERE component_id = %s AND component_type = 'cities'
-                """
-
-            cur.execute(likes_dislike_query, [user_id, user_id, city_id])
-            like_dislike_outcome = cur.fetchall()
-
-            if len(like_dislike_outcome) > 0 and (like_dislike_outcome[0][0] != 0):
-                like_dislike_outcome = like_dislike_outcome[0]
-
-                city_info['likes'] = like_dislike_outcome[1]
-                city_info['dislikes'] = like_dislike_outcome[2]
-                city_info['user_like'] = (like_dislike_outcome[3] > 0)
-                city_info['user_dislike'] = (like_dislike_outcome[4] > 0)
+        city_info['like_info'] = get_likes_dislike(user_id, city_id, 'cities')
 
         conn.close()
 
@@ -492,9 +483,11 @@ def search_for_city(param, world, limit, page, user_id, session_key):
     :return: the list of cities and their elements that
         meet the search requirements in json format
 
-    :format return: [{ name: city name,
-                       population: city population,
-                       reveal_status: revealed(if admin)}]
+    :format return: [{ id: the city's id
+                       name: city name,
+                       reveal_status: { admin: if admin in world
+                                        revealed(if admin): True of False}
+                    }]
     """
     city_list = []
     if check_session_key(user_id, session_key):
@@ -509,7 +502,7 @@ def search_for_city(param, world, limit, page, user_id, session_key):
 
         if check_editable(world, user_id, session_key):
             request = """
-            SELECT id, name, population, revealed FROM cities
+            SELECT id, name, revealed FROM cities
             WHERE name ILIKE %s AND
                 cities.world_id = %s
             LIMIT %s OFFSET %s
@@ -523,7 +516,7 @@ def search_for_city(param, world, limit, page, user_id, session_key):
                                   'reveal_status': city[3]})
         else:
             request = """
-                SELECT id, name, population FROM cities
+                SELECT id, name FROM cities
                 WHERE name ILIKE %s AND cities.world_id = %s AND cities.revealed = 't'
                 LIMIT %s OFFSET %s
             """

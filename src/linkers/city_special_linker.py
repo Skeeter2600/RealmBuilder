@@ -1,6 +1,6 @@
 from src.utils.db_tools import check_session_key
 from src.utils.db_utils import connect
-from src.utils.permissions import check_editable
+from src.utils.permissions import check_editable, check_viewable
 
 
 def rebuild_city_special_linker():
@@ -25,6 +25,40 @@ def rebuild_city_special_linker():
     conn.close()
 
 
+def check_same_world(city_id, special_id):
+    """
+    This function will check if two elements are in
+    the same world, which would allow a link
+
+    :param city_id: the id of the city
+    :param special_id: the id of the special
+
+    :return: -1 if no link, the world id if they do
+    """
+    conn = connect()
+    cur = conn.cursor()
+
+    world_id_check = """
+                    SELECT world_id FROM specials
+                    WHERE id = %s
+                """
+    cur.execute(world_id_check, [special_id])
+    special_world_id = cur.fetchall()[0][0]
+
+    world_id_check = """
+               SELECT world_id FROM cities
+               WHERE id = %s
+            """
+    cur.execute(world_id_check, [city_id])
+    city_world_id = cur.fetchall()[0][0]
+    conn.close()
+
+    if city_world_id == special_world_id:
+        return city_world_id
+
+    return -1
+
+
 def add_city_special_association(city_id, special_id, user_id, session_key):
     """
     This function will add an association between
@@ -38,21 +72,25 @@ def add_city_special_association(city_id, special_id, user_id, session_key):
     :return: True if successful, False if not
     """
     if check_session_key(user_id, session_key):
-        conn = connect()
-        cur = conn.cursor()
-        insert_request = """
-            INSERT INTO city_special_linker(city_id, special_id) VALUES
-            (%s, %s)
-            RETURNING id
-            """
-        cur.execute(insert_request, (city_id, special_id))
-        outcome = cur.fetchall()
+        world_id = check_same_world(city_id, special_id)
 
-        conn.commit()
-        conn.close()
+        if world_id > 0:
+            if check_editable(world_id, user_id, session_key):
+                conn = connect()
+                cur = conn.cursor()
+                insert_request = """
+                    INSERT INTO city_special_linker(city_id, special_id) VALUES
+                    (%s, %s)
+                    RETURNING id
+                    """
+                cur.execute(insert_request, (city_id, special_id))
+                outcome = cur.fetchall()
 
-        if outcome != ():
-            return True
+                conn.commit()
+                conn.close()
+
+                if outcome != ():
+                    return True
     return False
 
 
@@ -69,19 +107,23 @@ def remove_city_special_association(city_id, special_id, user_id, session_key):
     :return: True if successful, False if not
     """
     if check_session_key(user_id, session_key):
-        conn = connect()
-        cur = conn.cursor()
-        delete_request = """
-            DELETE FROM city_special_linker WHERE
-            city_id = %s AND special_id = %s
-            RETURNING id
-            """
-        cur.execute(delete_request, (city_id, special_id))
-        outcome = cur.fetchall()
-        if outcome != ():
-            conn.commit()
-            conn.close()
-            return True
+        world_id = check_same_world(city_id, special_id)
+
+        if world_id > 0:
+            if check_editable(world_id, user_id, session_key):
+                conn = connect()
+                cur = conn.cursor()
+                delete_request = """
+                DELETE FROM city_special_linker WHERE
+                city_id = %s AND special_id = %s
+                RETURNING id
+                """
+                cur.execute(delete_request, (city_id, special_id))
+                outcome = cur.fetchall()
+                if outcome != ():
+                    conn.commit()
+                    conn.close()
+                    return True
     return False
 
 
@@ -116,14 +158,21 @@ def get_cities_by_special(user_id, session_key, special_id):
                     INNER JOIN cities ON city_special_linker.city_id = cities.id
                 WHERE special_id = %s
                 """
+            cur.execute(city_query, [special_id])
+            outcome = cur.fetchall()
         else:
-            city_query = """
-                SELECT cities.id, name FROM city_special_linker
-                    INNER JOIN cities ON city_special_linker.city_id = cities.id
-                WHERE special_id = %s AND cities.revealed = 't'
-                """
-        cur.execute(city_query, [special_id])
-        outcome = cur.fetchall()
+            if check_viewable(world_id, user_id):
+                city_query = """
+                    SELECT cities.id, name FROM city_special_linker
+                        INNER JOIN cities ON city_special_linker.city_id = cities.id
+                    WHERE special_id = %s AND cities.revealed = 't'
+                    """
+                cur.execute(city_query, [special_id])
+                outcome = cur.fetchall()
+
+        for city in outcome:
+            outcome.append(({'id': city[0],
+                             'name': city[1]}))
         conn.close()
 
     return outcome
@@ -160,13 +209,17 @@ def get_specials_by_city(user_id, session_key, city_id):
                     INNER JOIN specials ON city_special_linker.city_id = specials.id
                 WHERE city_id = %s
                 """
+            cur.execute(specials_query, [city_id])
+            outcome = cur.fetchall()
         else:
-            specials_query = """
-                SELECT specials.id, name FROM city_special_linker
-                    INNER JOIN specials ON city_special_linker.city_id = specials.id
-                WHERE city_id = %s AND specials.revealed = 't'
-                """
-        cur.execute(specials_query, [city_id])
+            if check_viewable(world_id, user_id):
+                specials_query = """
+                    SELECT specials.id, name FROM city_special_linker
+                        INNER JOIN specials ON city_special_linker.city_id = specials.id
+                    WHERE city_id = %s AND specials.revealed = 't'
+                    """
+                cur.execute(specials_query, [city_id])
+                outcome = cur.fetchall()
 
         for special in cur.fetchall():
             outcome.append(({'id': special[0],

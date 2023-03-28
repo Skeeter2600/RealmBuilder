@@ -1,6 +1,6 @@
 from src.utils.db_tools import check_session_key
 from src.utils.db_utils import connect
-from src.utils.permissions import check_editable
+from src.utils.permissions import check_editable, check_viewable
 
 
 def rebuild_city_npc_linker():
@@ -25,6 +25,40 @@ def rebuild_city_npc_linker():
     conn.close()
 
 
+def check_same_world(city_id, npc_id):
+    """
+    This function will check if two elements are in
+    the same world, which would allow a link
+
+    :param city_id: the id of the city
+    :param npc_id: the id of the npc
+
+    :return: -1 if no link, the world id if they do
+    """
+    conn = connect()
+    cur = conn.cursor()
+
+    world_id_check = """
+            SELECT world_id FROM cities
+            WHERE id = %s
+        """
+    cur.execute(world_id_check, [city_id])
+    city_world_id = cur.fetchall()[0][0]
+
+    world_id_check = """
+               SELECT world_id FROM npcs
+               WHERE id = %s
+            """
+    cur.execute(world_id_check, [npc_id])
+    npc_world_id = cur.fetchall()[0][0]
+    conn.close()
+
+    if npc_world_id == city_world_id:
+        return npc_world_id
+
+    return -1
+
+
 def add_city_npc_association(city_id, npc_id, user_id, session_key):
     """
     This function will add an association between
@@ -38,21 +72,25 @@ def add_city_npc_association(city_id, npc_id, user_id, session_key):
     :return: True if successful, False if not
     """
     if check_session_key(user_id, session_key):
-        conn = connect()
-        cur = conn.cursor()
-        insert_request = """
-            INSERT INTO city_npc_linker(city_id, npc_id) VALUES
-            (%s, %s)
-            RETURNING id
-            """
-        cur.execute(insert_request, (city_id, npc_id))
-        outcome = cur.fetchall()
+        world_id = check_same_world(city_id, npc_id)
 
-        conn.commit()
-        conn.close()
+        if world_id > 0:
+            if check_editable(world_id, user_id, session_key):
+                conn = connect()
+                cur = conn.cursor()
+                insert_request = """
+                    INSERT INTO city_npc_linker(city_id, npc_id) VALUES
+                    (%s, %s)
+                    RETURNING id
+                    """
+                cur.execute(insert_request, (city_id, npc_id))
+                outcome = cur.fetchall()
 
-        if outcome != ():
-            return True
+                conn.commit()
+                conn.close()
+
+                if outcome != ():
+                    return True
     return False
 
 
@@ -69,16 +107,20 @@ def remove_city_npc_association(city_id, npc_id, user_id, session_key):
     :return: True if successful, False if not
     """
     if check_session_key(user_id, session_key):
-        conn = connect()
-        cur = conn.cursor()
-        delete_request = """
-            DELETE FROM city_npc_linker WHERE
-            city_id = %s AND npc_id = %s
-            """
-        cur.execute(delete_request, (city_id, npc_id))
-        conn.commit()
-        conn.close()
-        return True
+        world_id = check_same_world(city_id, npc_id)
+
+        if world_id > 0:
+            if check_editable(world_id, user_id, session_key):
+                conn = connect()
+                cur = conn.cursor()
+                delete_request = """
+                    DELETE FROM city_npc_linker WHERE
+                    city_id = %s AND npc_id = %s
+                    """
+                cur.execute(delete_request, (city_id, npc_id))
+                conn.commit()
+                conn.close()
+                return True
     return False
 
 
@@ -108,26 +150,29 @@ def get_cities_by_npc(user_id, session_key, npc_id):
         world_id = cur.fetchall()[0][0]
 
         if check_editable(world_id, user_id, session_key):
-            npc2_query = """
+            city_query = """
                     SELECT cities.id, name FROM city_npc_linker
                         INNER JOIN cities ON city_npc_linker.city_id = cities.id
                     WHERE npc_id = %s
                     """
+            cur.execute(city_query, [npc_id])
+            outcome = cur.fetchall()
         else:
-            npc2_query = """
-                    SELECT cities.id, name FROM city_npc_linker
-                        INNER JOIN cities ON city_npc_linker.city_id = cities.id
-                    WHERE npc_id = %s AND cities.revealed = 't'
-                    """
-        cur.execute(npc2_query, [npc_id])
-        outcome = cur.fetchall()
-        conn.close()
+            if check_viewable(world_id, user_id):
+                city_query = """
+                        SELECT cities.id, name FROM city_npc_linker
+                            INNER JOIN cities ON city_npc_linker.city_id = cities.id
+                        WHERE npc_id = %s AND cities.revealed = 't'
+                        """
+                cur.execute(city_query, [npc_id])
+                outcome = cur.fetchall()
 
+        conn.close()
         city_list = []
+
         for city in outcome:
             city_list.append({'id': city[0],
                              'name': city[1]})
-        conn.close()
         return city_list
 
     return outcome
@@ -164,14 +209,17 @@ def get_npcs_by_city(user_id, session_key, city_id):
                         INNER JOIN npcs ON city_npc_linker.npc_id = npcs.id
                     WHERE city_id = %s
                     """
+            cur.execute(npc_query, [city_id])
+            outcome = cur.fetchall()
         else:
-            npc_query = """
-                    SELECT npcs.id, name FROM city_npc_linker
-                        INNER JOIN npcs ON city_npc_linker.npc_id = npcs.id
-                    WHERE city_id = %s AND npcs.revealed = 't'
-                    """
-        cur.execute(npc_query, [city_id])
-        outcome = cur.fetchall()
+            if check_viewable(world_id, user_id):
+                npc_query = """
+                        SELECT npcs.id, name FROM city_npc_linker
+                            INNER JOIN npcs ON city_npc_linker.npc_id = npcs.id
+                        WHERE city_id = %s AND npcs.revealed = 't'
+                        """
+                cur.execute(npc_query, [city_id])
+                outcome = cur.fetchall()
 
         npc_list = []
         for npc in outcome:

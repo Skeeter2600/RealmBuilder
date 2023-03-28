@@ -9,7 +9,12 @@ def check_viewable(world_id, user_id):
     :param world_id: the id of the world being checked
     :param user_id: the id of the user checking
 
-    :return: True if viewable, False if not
+    :return: {viewable: True if viewable, False if not
+
+    :format return:
+        { viewable: able to view details,
+          public: if a session key and user id is needed (T or F)
+        }
     """
     conn = connect()
     cur = conn.cursor()
@@ -47,15 +52,19 @@ def check_viewable(world_id, user_id):
                 outcome = cur.fetchall()[0][0]
                 conn.close()
                 # if user is an admin
-                return outcome
+                return {"viewable": outcome,
+                        "public": public}
             conn.close()
-            return True
+            return {"viewable": True,
+                    "public": public}
         # user is owner or it is pub
         conn.close()
-        return True
+        return {"viewable": True,
+                "public": public}
     # bad world
     conn.close()
-    return False
+    return {"viewable": False,
+            "public": False}
 
 
 def check_editable(world_id, user_id, session_key):

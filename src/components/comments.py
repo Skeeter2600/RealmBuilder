@@ -1,3 +1,4 @@
+from src.components.likes_dislikes import get_likes_dislike
 from src.utils.db_tools import check_session_key
 from src.utils.db_utils import connect
 from src.utils.permissions import check_editable
@@ -147,10 +148,12 @@ def get_comment(comment_id, user_id):
                               profile_picture: user's profile picture},
                       comment: the comment,
                       time: the time stamp of the comment
-                      likes: int of likes,
-                      dislikes: int of dislikes
-                      user_like: is user liked it (True or False),
-                      user_dislike: is user disliked it (True or False),
+                      like_info: {
+                          likes: int of likes,
+                          dislikes: int of dislikes
+                          user_like: is user liked it (True or False),
+                          user_dislike: is user disliked it (True or False)
+                      }
                     }
     """
     conn = connect()
@@ -163,40 +166,21 @@ def get_comment(comment_id, user_id):
             """
     cur.execute(comment_request, [comment_id])
     results = cur.fetchall()
+
+    conn.close()
+
     if results != ():
         results = results[0]
-        values = {'user': {'user_id': results[0],
-                           'user_name': results[1],
-                           'profile_pic': results[2]},
-                  'comment': results[3],
-                  'time': results[4],
-                  'likes': 0,
-                  'dislikes': 0,
-                  'user_like': False,
-                  'user_dislike': False
-                  }
-
-        likes_dislike_query = """
-                        SELECT COUNT(*) AS total,
-                        sum(case when like_dislike = 'T' then 1 else 0 end) AS likes,
-                        sum(case when like_dislike = 'F' then 1 else 0 end) AS dislikes,
-                        sum(case when like_dislike = 'T' AND user_id = %s then 1 else 0 end) AS user_like,
-                        sum(case when like_dislike = 'F' AND user_id = %s then 1 else 0 end) AS user_dislike
-                        FROM likes_dislikes
-                        WHERE component_id = %s AND component_type = 'comments'
-                    """
-
-        cur.execute(likes_dislike_query, [user_id, user_id, comment_id])
-        like_dislike_outcome = cur.fetchall()
-        conn.close()
-
-        if len(like_dislike_outcome) > 0 and (like_dislike_outcome[0][0] != 0):
-            like_dislike_outcome = like_dislike_outcome[0]
-
-            values['likes'] = like_dislike_outcome[1]
-            values['dislikes'] = like_dislike_outcome[2]
-            values['user_like'] = (like_dislike_outcome[3] > 0)
-            values['user_dislike'] = (like_dislike_outcome[4] > 0)
+        values = {
+            'user': {
+                'user_id': results[0],
+                'user_name': results[1],
+                'profile_pic': results[2]
+            },
+            'comment': results[3],
+            'time': results[4],
+            'like_dislike_info': get_likes_dislike(user_id, comment_id, 'comments')
+        }
 
         return values
     return {}
@@ -218,8 +202,12 @@ def get_component_comments(user_id, component_id, component_table):
                         profile_picture: user's profile picture},
                 comment: the comment,
                 time: the time stamp of the comment
-                likes: int of likes,
-                dislikes: int of dislikes
+                like_dislike_info: {
+                          likes: int of likes,
+                          dislikes: int of dislikes
+                          user_like: is user liked it (True or False),
+                          user_dislike: is user disliked it (True or False)
+                      }
             }]
     """
     if user_id is None:
@@ -235,50 +223,20 @@ def get_component_comments(user_id, component_id, component_table):
         """
     cur.execute(comment_request, (component_id, component_table))
     results = cur.fetchall()
+    conn.close()
 
     # compile the comments
     data = []
     for comment in results:
 
-        likes_dislike_query = """
-                        SELECT COUNT(*) AS total,
-                        sum(case when like_dislike = 'T' then 1 else 0 end) AS likes,
-                        sum(case when like_dislike = 'F' then 1 else 0 end) AS dislikes,
-                        sum(case when like_dislike = 'T' AND user_id = %s then 1 else 0 end) AS user_like,
-                        sum(case when like_dislike = 'F' AND user_id = %s then 1 else 0 end) AS user_dislike
-                        FROM likes_dislikes
-                        WHERE component_id = %s AND component_type = 'comments'
-                    """
-
-        cur.execute(likes_dislike_query, [user_id, user_id, comment[5]])
-        like_dislike_outcome = cur.fetchall()
-        conn.close()
-
-        if like_dislike_outcome[0][0] != 0:
-            data.append({
-                'user': {'user_id': comment[0],
-                         'user_name': comment[1],
-                         'profile_pic': comment[2]},
-                'comment': comment[3],
-                'time': comment[4],
-                'likes': like_dislike_outcome[1],
-                'dislikes': like_dislike_outcome[2],
-                'user_like': (like_dislike_outcome[3] > 0),
-                'user_dislike': (like_dislike_outcome[4] > 0)
-            })
-
-        else:
-            data.append({
-                'user': {'user_id': comment[0],
-                         'user_name': comment[1],
-                         'profile_pic': comment[2]},
-                'comment': comment[3],
-                'time': comment[4],
-                'likes': 0,
-                'dislikes': 0,
-                'user_like': False,
-                'user_dislike': False
-            })
+        data.append({
+            'user': {'user_id': comment[0],
+                     'user_name': comment[1],
+                     'profile_pic': comment[2]},
+            'comment': comment[3],
+            'time': comment[4],
+            'like_dislike_info': get_likes_dislike(user_id, comment[5], 'comments')
+        })
 
     conn.close()
     return data

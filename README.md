@@ -22,8 +22,8 @@ password: *Your password here*
 port: 5432
 ```
 2. Run the following command in the command line client:
-`pip install -r requirements.txt`
+   `pip install -r requirements.txt`
 3. For the initial setup of the database tables, run the test `test_reset_tables`. This will run the function `rebuild_tables()` which is designed to dump the tables if they exist and reinsert them with the proper fields. Do not run this after values are put into it live as it will delete all of the information in the database
 
 ### Future Plans
-The future plans for this system is to, firstly, finish the design of the frontend website, as well as getting the likes and dislikes system online. After completion, the api calls will be integrated into Sullybot, allowing for the information to be accessed from any Discord server. Following this, I hope to make consistent updates, adding new feature, like more component types.
+The future plans for this system is to, firstly, finish the design of the frontend website, as well as getting the likes and dislikes system online. After completion, the api calls will be integrated into Sullybot, allowing for the information to be accessed from any Discord server. Following this, I hope to make consistent updates, adding new features, like more component types., as well as possible AI integration, like Midjourney image generation and ChatGTP description generation

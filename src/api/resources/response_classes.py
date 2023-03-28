@@ -25,6 +25,17 @@ class AdminContent(BaseModel):
     edit_date: datetime
 
 
+class LikeDislikeResponse(BaseModel):
+    """
+    Content for a tracking likes and dislikes
+    on a component
+    """
+    likes: int
+    dislikes: int
+    user_like: bool
+    user_dislike: bool
+
+
 # Element Responses
 class CityAdminContent(BaseModel):
     """
@@ -51,6 +62,7 @@ class CityResponse(BaseModel):
     """
     name: str
     images: List[UploadFile]
+    like_dislike_info: LikeDislikeResponse
     population: int
     song: str
     trades: str
@@ -68,8 +80,7 @@ class CommentResponse(BaseModel):
     user: List[UserResponse]
     comment: str
     time: datetime
-    likes: int
-    dislikes: int
+    like_dislike_info: LikeDislikeResponse
 
 
 class NPCResponse(BaseModel):
@@ -78,6 +89,7 @@ class NPCResponse(BaseModel):
     """
     name: str
     images: List[UploadFile]
+    like_dislike_info: LikeDislikeResponse
     age: int
     occupation: str
     description: str
@@ -93,6 +105,7 @@ class SpecialResponse(BaseModel):
     """
     name: str
     images: List[UploadFile]
+    like_dislike_info: LikeDislikeResponse
     description: str
     associated_npcs: List[SimpleResponse]
     associated_cities: List[SimpleResponse]
@@ -104,6 +117,7 @@ class WorldResponse(BaseModel):
     Return data for a world
     """
     valid: bool
+    like_dislike_info: LikeDislikeResponse
     name: str
     description: str
     npcs: List[SimpleResponse]

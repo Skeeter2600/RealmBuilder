@@ -126,6 +126,20 @@ class DeleteComment(BaseModel):
     comment_id: int
 
 
+# like_dislike classes
+class AddLikeDislike(BaseModel):
+    AuthoDetails: AuthoDetails
+    like_dislike: bool
+    component_id: int
+    component_type: str
+
+
+class RemoveLikeDislike(BaseModel):
+    AuthoDetails: AuthoDetails
+    component_id: int
+    component_type: str
+
+
 # npc classes
 class EditNPCInfo(BaseModel):
     name: str

@@ -114,12 +114,12 @@ def delete_user(user_id, session_key):
                         """
                     cur.execute(delete_admin_link, (user_id, world))
 
-            delete_user = """
+            delete_user_query = """
                 DELETE FROM users
                 WHERE id = %s
                 RETURNING id
                 """
-            cur.execute(delete_user, [user_id])
+            cur.execute(delete_user_query, [user_id])
             outcome = cur.fetchall()
             conn.commit()
             conn.close()

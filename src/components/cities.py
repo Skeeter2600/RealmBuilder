@@ -1,3 +1,4 @@
+from src.components.likes_dislikes import get_likes_dislike
 from src.utils.permissions import check_editable
 from src.linkers.city_image_linker import get_associated_city_images
 from src.linkers.city_npc_linker import get_npcs_by_city
@@ -83,10 +84,12 @@ def add_city(user_id, session_key, details):
                     add_values = ''
                     length = len(details['images'])
                     i = 0
-                    while i < length-1:
-                        add_values = add_values + '(' + str(city_id) + ', ' + str(details['images'][i]) + '), '
+                    while i < length - 1:
+                        add_values = add_values + '(' + str(city_id) + ', ' + \
+                                     str(details['images'][i]) + '), '
                         i += 1
-                    add_values = add_values + '(' + str(city_id) + ', ' + str(details['images'][i]) + ') '
+                    add_values = add_values + '(' + str(city_id) + ', ' + \
+                                 str(details['images'][i]) + ') '
 
                     add_values = add_values + ' returning id'
                     image_add_request = image_add_request + add_values
@@ -104,10 +107,12 @@ def add_city(user_id, session_key, details):
                     add_values = ''
                     length = len(details['associated_npcs'])
                     i = 0
-                    while i < length-1:
-                        add_values = add_values + '(' + str(city_id) + ', ' + str(details['associated_npcs'][i]) + '), '
+                    while i < length - 1:
+                        add_values = add_values + '(' + str(city_id) + ', ' + \
+                                     str(details['associated_npcs'][i]) + '), '
                         i += 1
-                    add_values = add_values + '(' + str(city_id) + ', ' + str(details['associated_npcs'][i]) + ') '
+                    add_values = add_values + '(' + str(city_id) + ', ' + \
+                                    str(details['associated_npcs'][i]) + ') '
 
                     add_values = add_values + ' returning id'
                     npc_add_request = npc_add_request + add_values
@@ -125,11 +130,13 @@ def add_city(user_id, session_key, details):
                     add_values = ''
                     length = len(details['associated_specials'])
                     i = 0
-                    while i < length-1:
-                        add_values = add_values + '(' + str(city_id) + ', ' + str(details['associated_specials'][i]) + '), '
+                    while i < length - 1:
+                        add_values = add_values + '(' + str(city_id) + ', ' + str(
+                            details['associated_specials'][i]) + '), '
                         i += 1
 
-                    add_values = add_values + '(' + str(city_id) + ', ' + str(details['associated_specials'][i]) + ') '
+                    add_values = add_values + '(' + str(city_id) + ', ' + \
+                                    str(details['associated_specials'][i]) + ') '
 
                     add_values = add_values + ' returning id'
                     special_add_request = special_add_request + add_values
@@ -305,6 +312,12 @@ def get_city(user_id, session_key, city_id, admin):
 
     :format return: { name: city name,
                       images: [images associated with npc],
+                      like_dislike_info: {
+                          'likes': number of likes,
+                          'dislikes': number of dislikes,
+                          'user_like': bool of liked,
+                          'user_dislike': bool of disliked
+                      }
                       population: city population,
                       song: city song,
                       trades: city trades,
@@ -322,6 +335,12 @@ def get_city(user_id, session_key, city_id, admin):
     """
     city_info = {'name': '',
                  'images': [],
+                 'like_dislike_info':
+                     {'likes': 0,
+                      'dislikes': 0,
+                      'user_like': False,
+                      'user_dislike': False
+                      },
                  'population': 0,
                  'song': '',
                  'trades': '',
@@ -376,6 +395,8 @@ def get_city(user_id, session_key, city_id, admin):
                 admin_content['edit_date'] = admin_outcome[1]
 
                 city_info['admin_content'] = admin_content
+
+        city_info['like_info'] = get_likes_dislike(user_id, city_id, 'cities')
 
         conn.close()
 

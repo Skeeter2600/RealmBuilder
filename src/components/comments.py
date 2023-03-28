@@ -1,3 +1,4 @@
+from src.components.likes_dislikes import get_likes_dislike
 from src.utils.db_tools import check_session_key
 from src.utils.db_utils import connect
 from src.utils.permissions import check_editable
@@ -18,8 +19,6 @@ def rebuild_comments_table():
             user_id             INTEGER NOT NULL,
             comment             TEXT NOT NULL,
             time                TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-            likes               INTEGER DEFAULT 0,
-            dislikes            INTEGER DEFAULT 0,
             world_id            INTEGER NOT NULL REFERENCES worlds ON DELETE CASCADE,
             component_id        INTEGER NOT NULL,
             component_type      TEXT NOT NULL
@@ -81,7 +80,7 @@ def delete_comment(user_id, session_key, comment_id):
             """
         cur.execute(user_check, [comment_id])
         outcome = cur.fetchall()
-        if outcome != []:
+        if outcome:
             outcome = outcome[0]
             if check_editable(outcome[1], user_id, session_key) or outcome[0] == user_id:
                 delete_request = """
@@ -135,11 +134,12 @@ def edit_comment(user_id, session_key, comment_id, comment):
     return False
 
 
-def get_comment(comment_id):
+def get_comment(comment_id, user_id):
     """
     This function will get the info related to a comment
 
     :param comment_id: the id of the component with the comments
+    :param user_id: the id of the user signed in
 
     :return: info on the comment
 
@@ -148,41 +148,50 @@ def get_comment(comment_id):
                               profile_picture: user's profile picture},
                       comment: the comment,
                       time: the time stamp of the comment
-                      likes: int of likes,
-                      dislikes: int of dislikes
+                      like_info: {
+                          likes: int of likes,
+                          dislikes: int of dislikes
+                          user_like: is user liked it (True or False),
+                          user_dislike: is user disliked it (True or False)
+                      }
                     }
     """
     conn = connect()
     cur = conn.cursor()
 
     comment_request = """
-            SELECT users.id, users.username, users.profile_pic, comment, time, likes, dislikes FROM comments
+            SELECT users.id, users.username, users.profile_pic, comment, time FROM comments
                 INNER JOIN users ON comments.user_id = users.id
             WHERE comments.id = %s
             """
     cur.execute(comment_request, [comment_id])
     results = cur.fetchall()
+
     conn.close()
 
     if results != ():
         results = results[0]
-        values = {'user': {'user_id': results[0],
-                         'user_name': results[1],
-                         'profile_pic': results[2]},
-                'comment': results[3],
-                'time': results[4],
-                'likes': results[5],
-                'dislikes': results[6]
-                }
+        values = {
+            'user': {
+                'user_id': results[0],
+                'user_name': results[1],
+                'profile_pic': results[2]
+            },
+            'comment': results[3],
+            'time': results[4],
+            'like_dislike_info': get_likes_dislike(user_id, comment_id, 'comments')
+        }
+
         return values
     return {}
 
 
-def get_component_comments(component_id, component_table):
+def get_component_comments(user_id, component_id, component_table):
     """
     This function will get the comments associated with
     a component and the info associated to them
 
+    :param user_id: the id of the user signed in
     :param component_id: the id of the component with the comments
     :param component_table: the table of component with the comments
 
@@ -193,15 +202,22 @@ def get_component_comments(component_id, component_table):
                         profile_picture: user's profile picture},
                 comment: the comment,
                 time: the time stamp of the comment
-                likes: int of likes,
-                dislikes: int of dislikes
+                like_dislike_info: {
+                          likes: int of likes,
+                          dislikes: int of dislikes
+                          user_like: is user liked it (True or False),
+                          user_dislike: is user disliked it (True or False)
+                      }
             }]
     """
+    if user_id is None:
+        user_id = -1
+
     conn = connect()
     cur = conn.cursor()
 
     comment_request = """
-        SELECT users.id, users.username, users.profile_pic, comment, time, likes, dislikes FROM comments
+        SELECT users.id AS commenter_id, users.username, users.profile_pic, comment, time, comments.id AS comment_id FROM comments
             INNER JOIN users ON users.id = comments.user_id
         WHERE component_id = %s AND component_type = %s
         """
@@ -212,15 +228,17 @@ def get_component_comments(component_id, component_table):
     # compile the comments
     data = []
     for comment in results:
+
         data.append({
             'user': {'user_id': comment[0],
                      'user_name': comment[1],
                      'profile_pic': comment[2]},
             'comment': comment[3],
             'time': comment[4],
-            'likes': comment[5],
-            'dislikes': comment[6]
+            'like_dislike_info': get_likes_dislike(user_id, comment[5], 'comments')
         })
+
+    conn.close()
     return data
 
 

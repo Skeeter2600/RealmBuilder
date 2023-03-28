@@ -1,4 +1,5 @@
 from src.components.comments import get_component_comments
+from src.components.likes_dislikes import get_likes_dislike
 from src.linkers.world_user_linker import get_new_elements
 from src.utils.db_tools import check_session_key
 from src.utils.db_utils import connect
@@ -337,6 +338,12 @@ def get_world_details(world_id, user_id, session_key):
 
     :format return:
             { valid: able to view details,
+              like_dislike_info: {
+                  likes: int of likes,
+                  dislikes: int of dislikes
+                  user_like: is user liked it (True or False),
+                  user_dislike: is user disliked it (True or False)
+              }
               name: world name,
               description: world description,
               npcs:     [{ id: npc id,
@@ -365,6 +372,7 @@ def get_world_details(world_id, user_id, session_key):
             cur = conn.cursor()
             world_info = {
                 'valid': True,
+                'like_dislike_info': get_likes_dislike(user_id, world_id, 'worlds'),
                 'name': '',
                 'description': '',
                 'npcs': [],
@@ -398,6 +406,12 @@ def get_world_details(world_id, user_id, session_key):
                 return world_info
 
     return {'valid': False,
+            'like_dislike_info':
+                {'likes': 0,
+                 'dislikes': 0,
+                 'user_like': False,
+                 'user_dislike': False
+                 },
             'name': '',
             'description': '',
             'npcs': [],

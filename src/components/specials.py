@@ -1,3 +1,4 @@
+from src.components.likes_dislikes import get_likes_dislike
 from src.linkers.city_special_linker import get_cities_by_special
 from src.linkers.npc_special_linker import get_npcs_by_special
 from src.linkers.special_image_linker import get_associated_special_images
@@ -275,7 +276,13 @@ def get_special_info(user_id, session_key, special_id, admin):
     :return: the npc info in a json format
 
     :format return: { name: special name,
-                      images: [images associated with special]
+                      images: [images associated with special],
+                      like_dislike_info: {
+                          likes: int of likes,
+                          dislikes: int of dislikes
+                          user_like: is user liked it (True or False),
+                          user_dislike: is user disliked it (True or False)
+                      }
                       description: npc description,
                       associated_npcs: [{id: npc id,
                                          name: npc name}]
@@ -289,6 +296,12 @@ def get_special_info(user_id, session_key, special_id, admin):
     """
     special_info = {'name': '',
                     'images': [],
+                    'like_dislike_info':
+                        {'likes': 0,
+                         'dislikes': 0,
+                         'user_like': False,
+                         'user_dislike': False
+                         },
                     'description': "",
                     'associated_npcs': [],
                     'associated_cities': [],
@@ -336,6 +349,8 @@ def get_special_info(user_id, session_key, special_id, admin):
                 admin_content['edit_date'] = admin_outcome[2]
 
                 special_info['admin_content'] = admin_content
+
+            special_info['like_dislike_info'] = get_likes_dislike(user_id, special_id, 'specials')
 
         conn.close()
 

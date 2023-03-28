@@ -25,5 +25,3 @@ def check_session_key(user_id, session_key):
     outcome = cur.fetchall()[0][0]
     return outcome == session_key
 
-
-

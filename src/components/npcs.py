@@ -1,3 +1,4 @@
+from src.components.likes_dislikes import get_likes_dislike
 from src.linkers.npc_npc_linker import get_associated_npcs
 from src.linkers.npc_special_linker import get_specials_by_npc
 from src.linkers.city_npc_linker import get_cities_by_npc
@@ -307,7 +308,13 @@ def get_npc_info(user_id, session_key, npc_id, admin):
     :return: the npc info in a json format
 
     :format return: { name: npc name,
-                      images: [images associated with npc]
+                      images: [images associated with npc],
+                      like_dislike_info: {
+                          'likes': number of likes,
+                          'dislikes': number of dislikes,
+                          'user_like': bool of liked,
+                          'user_dislike': bool of disliked
+                      }
                       age: npc age,
                       occupation: npc occupation,
                       description: npc description,
@@ -325,6 +332,12 @@ def get_npc_info(user_id, session_key, npc_id, admin):
     """
     npc_info = {'name': '',
                 'images': [],
+                'like_dislike_info':
+                    {'likes': 0,
+                     'dislikes': 0,
+                     'user_like': False,
+                     'user_dislike': False
+                     },
                 'age': '',
                 'occupation': "",
                 'description': "",
@@ -379,6 +392,8 @@ def get_npc_info(user_id, session_key, npc_id, admin):
 
                 npc_info['admin_content'] = admin_content
 
+            npc_info['like_dislike_info'] = get_likes_dislike(user_id, npc_id, 'npcs')
+
         conn.close()
 
     return npc_info
@@ -401,11 +416,11 @@ def reveal_hidden_npc(user_id, session_key, world_id, npc_id):
         cur = conn.cursor()
 
         reveal_query = """
-        UPDATE npcs SET
-        description = concat(description, '\n\nREVEAL\n\n', hidden_description),
-        hidden_description = ''
-        WHERE id = %s
-        returning id
+            UPDATE npcs SET
+            description = concat(description, '\n\nREVEAL\n\n', hidden_description),
+            hidden_description = ''
+            WHERE id = %s
+            returning id
         """
         cur.execute(reveal_query, [npc_id])
         outcome = cur.fetchall()

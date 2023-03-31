@@ -56,7 +56,7 @@ async def delete_user(request_info: AuthoDetails):
     return users.delete_user(request_info.user_id, request_info.session_key)
 
 
-@router.get("/log", tags=["Login/LogOut"])
+@router.post("/log", tags=["Login/LogOut"], response_model=LoginDetails)
 async def login_user(request_info: LoginDetails):
     """
     This will sign a user in
@@ -64,7 +64,7 @@ async def login_user(request_info: LoginDetails):
     return users.login_user(request_info.username, request_info.password)
 
 
-@router.put("/log", tags=["Login/LogOut"])
+@router.put("/log", tags=["Login/LogOut"], response_model=str)
 async def logout_user(request_info: AuthoDetails):
     """
     This will log a user out

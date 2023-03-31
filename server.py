@@ -1,3 +1,4 @@
+import uvicorn
 from fastapi import FastAPI
 
 import src.api.element_linkers.city_npc_link as city_npc_linker
@@ -48,3 +49,7 @@ app.include_router(special_image_link.router)
 # resource folder
 app.include_router(startup.router)
 app.include_router(search.router)
+
+
+if __name__ == "__main__":
+    uvicorn.run(app, host="localhost", port=8000)

@@ -311,6 +311,8 @@ def login_user(username, password):
         conn.close()
         return [session_key, user_id]
 
+    return ['already logged in', -1]
+
 
 def logout_user(user_id, session_key):
     """

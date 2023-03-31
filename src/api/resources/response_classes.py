@@ -56,6 +56,11 @@ class UserResponse(BaseModel):
     profile_picture: UploadFile
 
 
+class LoginResponse(BaseModel):
+    response: str
+    user_id: int
+
+
 class CityResponse(BaseModel):
     """
     Return data for a city

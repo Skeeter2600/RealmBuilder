@@ -13,5 +13,41 @@
 </head>
 <body>
     <div id="header"></div>
+    <section class="hero-section" id="elementCards"></section>
+    <script type="text/javascript">
+        fetch('http://127.0.0.1:8000/search/city', {
+            method: "GET",
+            body: {
+                user_id: 1,
+                session_key: 'bdb834b2ebe20fbdd089b94bbc512c05'
+            }
+        })
+            .then(response => {
+            let parentElem = document.getElementById("elementCards")
+
+            let cardGrid = document.createElement("div")
+            cardGrid.setAttribute("class", "card-grid")
+            }
+        )
+
+        /**
+         *         <div class="card-grid">
+         *             <a class="card" href="#">
+         *                 <div class="card__background" style="background-image: url(https://images.unsplash.com/photo-1557177324-56c542165309?ixlib=rb-1.2.1&auto=format&fit=crop&w=1950&q=80)"></div>
+         *                 <div class="card__content">
+         *                     <p class="card__category">Category</p>
+         *                     <h3 class="card__heading">Example Card Heading</h3>
+         *                 </div>
+         *             </a>
+         *             <a class="card" href="#">
+         *                 <div class="card__background" style="background-image: url(https://images.unsplash.com/photo-1557187666-4fd70cf76254?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=800&q=60)"></div>
+         *                 <div class="card__content">
+         *                     <p class="card__category">Category</p>
+         *                     <h3 class="card__heading">Example Card Heading</h3>
+         *                 </div>
+         *             </a>
+         *         </div>
+         */
+    </script>
 </body>
 </html>

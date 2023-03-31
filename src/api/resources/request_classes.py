@@ -60,7 +60,7 @@ class NPCSpecialLinking(BaseModel):
 
 class WorldUserLinking(BaseModel):
     world_id: int
-    user_id: id
+    user_id: int
     AuthoDetails: AuthoDetails
 
 

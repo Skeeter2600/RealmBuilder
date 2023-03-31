@@ -1,8 +1,7 @@
 from typing import List
 from fastapi import APIRouter
 
-from src.api.resources.request_classes import WorldUserLinking, AuthoDetails
-from src.api.resources.response_classes import SimpleResponse
+from src.api.resources.request_classes import WorldUserLinking
 from src.linkers.admins import add_world_user_admin_association, delete_world_user_admin_association
 from src.linkers.world_user_linker import add_world_user_association, delete_world_user_association
 

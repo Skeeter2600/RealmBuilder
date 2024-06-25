@@ -20,7 +20,7 @@ def rebuild_cities_table():
         CREATE TABLE cities(
             id              SERIAL PRIMARY KEY,
             name            TEXT NOT NULL,
-            population      INTEGER NOT NULL,
+            population      INTEGER,
             song            TEXT,
             trades          TEXT,
             aesthetic       TEXT,
@@ -148,8 +148,8 @@ def add_city(user_id, session_key, details):
 
                 conn.commit()
                 conn.close()
-                return [True, city_id]
-    return [False, -1]
+                return {'result': True, 'city_id': city_id}
+    return {'result': False, 'city_id': -1}
 
 
 def copy_city(user_id, session_key, city_id, world_id):
@@ -187,8 +187,8 @@ def copy_city(user_id, session_key, city_id, world_id):
         conn.commit()
         conn.close()
         if outcome != ():
-            return [True, new_id]
-    return [False, -1]
+            return {'result': True, 'city_id': new_id}
+    return {'result': False, 'city_id': -1}
 
 
 def delete_city(user_id, session_key, city_id, world_id):
@@ -218,8 +218,8 @@ def delete_city(user_id, session_key, city_id, world_id):
             conn.close()
 
             if outcome != ():
-                return True
-    return False
+                return {'result': True}
+    return {'result': False}
 
 
 def edit_city(user_id, session_key, city_id, world_id, details):

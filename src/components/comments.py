@@ -57,8 +57,8 @@ def add_comment(user_id, session_key, world_id, component_id, component_type, co
         conn.commit()
         conn.close()
         if outcome != ():
-            return [True, outcome[0][0]]
-    return [False, -1]
+            return {'result': True, 'comment': outcome[0][0]}
+    return {'result': True, 'comment': -1}
 
 
 def delete_comment(user_id, session_key, comment_id):
@@ -93,8 +93,8 @@ def delete_comment(user_id, session_key, comment_id):
                 if outcome != ():
                     conn.commit()
                     conn.close()
-                    return True
-    return False
+                    return {'result': True}
+    return {'result': False}
 
 
 def edit_comment(user_id, session_key, comment_id, comment):
@@ -125,13 +125,12 @@ def edit_comment(user_id, session_key, comment_id, comment):
 
         if outcome == ():
             conn.close()
-            return False
+            return {'result': False}
 
         conn.commit()
         conn.close()
-        return True
-
-    return False
+        return {'result': True}
+    return {'result': False}
 
 
 def get_comment(comment_id, user_id):
@@ -183,7 +182,11 @@ def get_comment(comment_id, user_id):
         }
 
         return values
-    return {}
+    return {'user': {},
+            'comment': '',
+            'time': '',
+            'like_dislike_info': []
+            }
 
 
 def get_component_comments(user_id, component_id, component_table):

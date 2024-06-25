@@ -1,8 +1,8 @@
-import hashlib
 import secrets
 
 from src.utils.db_tools import check_session_key
 from src.utils.db_utils import connect
+from argon2 import PasswordHasher
 
 
 def rebuild_users_table():
@@ -19,7 +19,7 @@ def rebuild_users_table():
             id              SERIAL PRIMARY KEY,
             username        TEXT NOT NULL,
             password        TEXT NOT NULL,
-            profile_pic     bytea DEFAULT NULL,
+            profile_pic     TEXT DEFAULT NULL,
             public          BOOLEAN DEFAULT FALSE,
             bio             TEXT,
             email           TEXT NOT NULL,
@@ -52,9 +52,10 @@ def create_user(username, password, email):
 
     if outcome[0][0] > 0:
         conn.close()
-        return "A user with that username already exists"
+        return {'result': "A user with that username already exists"}
 
-    encrypted = hashlib.sha512(password.encode()).hexdigest()
+    ph = PasswordHasher()
+    encrypted = ph.hash(password)
 
     add_user = """
         INSERT INTO users(username, password, email) VALUES
@@ -66,11 +67,11 @@ def create_user(username, password, email):
 
     if outcome == ():
         conn.close()
-        return "An error occurred, try again"
+        return {'result': "An error occurred, try again"}
 
     conn.commit()
     conn.close()
-    return "Success!"
+    return {'result': "Success!"}
 
 
 def delete_user(user_id, session_key):
@@ -283,10 +284,11 @@ def login_user(username, password):
     conn = connect()
     cur = conn.cursor()
 
-    encrypted = hashlib.sha512(password.encode()).hexdigest()
+    ph = PasswordHasher()
+    encrypted = ph.hash(password)
 
     request = """
-        SELECT session_key FROM users
+        SELECT session_key, password FROM users
         WHERE users.username = %s and users.password = %s
         """
     cur.execute(request, (username, encrypted))
@@ -294,22 +296,26 @@ def login_user(username, password):
 
     if not outcome:
         conn.close()
-        return ["Bad username or password", -1]
+        return {'session_key': 0, 'user_id': -1}
 
-    if outcome[0] == (None,):
-        session_key = secrets.token_hex(16)
-        session_key_request = """
-            UPDATE users
-            SET session_key = %s
-            WHERE users.username = %s and users.password = %s
-            returning id
-            """
-        cur.execute(session_key_request, (session_key, username, encrypted))
-        user_id = cur.fetchall()[0][0]
-
+    if not ph.verify(outcome[0][1], password):
         conn.commit()
         conn.close()
-        return [session_key, user_id]
+        return {'session_key': 0, 'user_id': -1}
+
+    session_key = secrets.token_hex(128)
+    session_key_request = """
+        UPDATE users
+        SET session_key = %s
+        WHERE users.username = %s and users.password = %s
+        returning id
+        """
+    cur.execute(session_key_request, (session_key, username, encrypted))
+    user_id = cur.fetchall()[0][0]
+
+    conn.commit()
+    conn.close()
+    return {'session_key': session_key, 'user_id': user_id}
 
 
 def logout_user(user_id, session_key):
@@ -337,8 +343,8 @@ def logout_user(user_id, session_key):
         conn.commit()
         conn.close()
 
-        return "signed out"
-    return "bad request"
+        return {'result': "signed out"}
+    return {'result': "bad request"}
 
 
 def search_user(param, limit, page, user_id, session_key):

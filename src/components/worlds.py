@@ -60,9 +60,8 @@ def add_world(name, owner_id, session_key):
 
             conn.commit()
             conn.close()
-
-            return [True, outcome[0][0]]
-    return [False, -1]
+            return {'result': True, 'world_id': outcome[0][0]}
+    return {'result': False, 'world_id': -1}
 
 
 def delete_world(world_id, owner_id, session_key):
@@ -94,8 +93,8 @@ def delete_world(world_id, owner_id, session_key):
 
             # if the delete was successful
             if len(outcome) > 0:
-                return True
-    return False
+                return {'result': True}
+    return {'result': False}
 
 
 def edit_world(world_id, user_id, session_key, elements):
@@ -127,8 +126,8 @@ def edit_world(world_id, user_id, session_key, elements):
         conn.commit()
 
         conn.close()
-        return True
-    return False
+        return {'result': True}
+    return {'result': False}
 
 
 def join_world_public(world_id, user_id, session_key):
@@ -165,8 +164,8 @@ def join_world_public(world_id, user_id, session_key):
             if outcome != ():
                 conn.commit()
                 conn.close()
-                return True
-    return False
+                return {'result': True}
+    return {'result': False}
 
 
 def join_world_private(world_id, user_id, admin_id, session_key):
@@ -205,8 +204,8 @@ def join_world_private(world_id, user_id, admin_id, session_key):
                 if outcome != ():
                     conn.commit()
                     conn.close()
-                    return True
-    return False
+                    return {'result': True}
+    return {'result': False}
 
 
 def get_owner(world_id):

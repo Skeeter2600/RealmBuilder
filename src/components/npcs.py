@@ -168,12 +168,12 @@ def add_npc(user_id, session_key, details):
                     cur.execute(special_add_request)
                     outcome = cur.fetchall()
                     if outcome == ():
-                        return False
+                        return {'result': False, 'npc_id': -1}
 
                 conn.commit()
                 conn.close()
-                return [True, npc_id]
-    return [False, -1]
+                return {'result': True, 'npc_id': npc_id}
+    return {'result': False, 'npc_id': -1}
 
 
 def copy_npc(user_id, session_key, npc_id, world_id):
@@ -213,8 +213,8 @@ def copy_npc(user_id, session_key, npc_id, world_id):
         conn.commit()
         conn.close()
         if outcome != ():
-            return [True, new_id]
-    return [False, -1]
+            return {'result': True, 'npc_id': new_id}
+    return {'result': False, 'npc_id': -1}
 
 
 def delete_npc(user_id, session_key, npc_id, world_id):
@@ -244,8 +244,8 @@ def delete_npc(user_id, session_key, npc_id, world_id):
             conn.close()
 
             if outcome != ():
-                return True
-    return False
+                return {'result': True}
+        return {'result': False}
 
 
 def edit_npc(user_id, session_key, npc_id, world_id, details):
@@ -293,7 +293,13 @@ def edit_npc(user_id, session_key, npc_id, world_id, details):
 
             return get_npc_info(user_id, session_key, npc_id, True)
 
-    return {}
+    return { 'name': '',
+             'age': '',
+             'occupation': '',
+             'description': '',
+             'hidden_description': '',
+              'revealed': False
+            }
 
 
 def get_npc_info(user_id, session_key, npc_id, admin):
@@ -429,7 +435,13 @@ def reveal_hidden_npc(user_id, session_key, world_id, npc_id):
         if outcome != ():
             return get_npc_info(user_id, session_key, npc_id, True)
 
-    return {}
+    return {'name': '',
+            'age': '',
+            'occupation': '',
+            'description': '',
+            'hidden_description': '',
+            'revealed': False
+            }
 
 
 def search_for_npc(param, world, limit, page, user_id, session_key):

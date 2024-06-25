@@ -96,7 +96,7 @@ def add_special(user_id, session_key, details):
                 cur.execute(image_add_request)
                 outcome = cur.fetchall()
                 if outcome == ():
-                    return False
+                    return {'result': False, 'special_id': -1}
 
             if len(details['associated_cities']) > 0:
                 # compile the city list to add to the linker
@@ -116,7 +116,7 @@ def add_special(user_id, session_key, details):
                 cur.execute(city_add_request)
                 outcome = cur.fetchall()
                 if outcome == ():
-                    return False
+                    return {'result': False, 'special_id': -1}
 
             if len(details['associated_npcs']) > 0:
                 # compile the npc list to add to the linker
@@ -136,12 +136,12 @@ def add_special(user_id, session_key, details):
                 cur.execute(npc_add_request)
                 outcome = cur.fetchall()
                 if outcome == ():
-                    return False
+                    return {'result': False, 'special_id': -1}
 
             conn.commit()
             conn.close()
-            return [True, special_id]
-    return [False, -1]
+            return {'result': True, 'special_id': special_id}
+    return {'result': False, 'special_id': -1}
 
 
 def copy_special(user_id, session_key, special_id, world_id):
@@ -181,8 +181,8 @@ def copy_special(user_id, session_key, special_id, world_id):
         conn.commit()
         conn.close()
         if outcome != ():
-            return [True, new_id]
-    return [False, -1]
+            return {'result': True, 'special_id': new_id}
+    return {'result': False, 'special_id': -1}
 
 
 def delete_special(user_id, session_key, special_id, world_id):
@@ -212,8 +212,8 @@ def delete_special(user_id, session_key, special_id, world_id):
             conn.close()
 
             if outcome != ():
-                return True
-    return False
+                return {'result': True}
+    return {'result': False}
 
 
 def edit_special(user_id, session_key, special_id, world_id, details):
@@ -251,7 +251,10 @@ def edit_special(user_id, session_key, special_id, world_id, details):
 
             if outcome == ():
                 conn.close()
-                return {}
+                return {'name': '',
+                        'description': '',
+                        'hidden_description': '',
+                        'revealed': False}
 
             conn.commit()
             conn.close()
@@ -387,7 +390,10 @@ def reveal_hidden_special(user_id, session_key, world_id, special_id):
         if outcome != ():
             return get_special_info(user_id, session_key, special_id, True)
 
-    return {}
+    return {'name': '',
+            'description': '',
+            'hidden_description': '',
+            'revealed': False}
 
 
 def search_for_special(param, world, limit, page, user_id, session_key):

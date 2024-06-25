@@ -67,8 +67,8 @@ def add_like_dislike(user_id, session_key, like_dislike, component_id, component
         if outcome != ():
             conn.commit()
             conn.close()
-            return True
-    return False
+            return {'result': True}
+    return {'result': False}
 
 
 def remove_like_dislike(user_id, session_key, component_id, component_type):
@@ -104,8 +104,8 @@ def remove_like_dislike(user_id, session_key, component_id, component_type):
             conn.close()
 
             if outcome != ():
-                return True
-    return False
+                return {'result': True}
+    return {'result': False}
 
 
 def get_likes_dislike(user_id, component_id, component_type):

@@ -120,7 +120,7 @@ def get_new_elements(world_id, user_id, session_key):
             }
     """
     if check_session_key(user_id, session_key):
-        if check_viewable(world_id, user_id):
+        if check_viewable(world_id, user_id)['viewable']:
             conn = connect()
             cur = conn.cursor()
 

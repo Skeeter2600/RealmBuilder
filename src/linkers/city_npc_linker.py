@@ -158,7 +158,7 @@ def get_cities_by_npc(user_id, session_key, npc_id):
             cur.execute(city_query, [npc_id])
             outcome = cur.fetchall()
         else:
-            if check_viewable(world_id, user_id):
+            if check_viewable(world_id, user_id)['viewable']:
                 city_query = """
                         SELECT cities.id, name FROM city_npc_linker
                             INNER JOIN cities ON city_npc_linker.city_id = cities.id
@@ -212,7 +212,7 @@ def get_npcs_by_city(user_id, session_key, city_id):
             cur.execute(npc_query, [city_id])
             outcome = cur.fetchall()
         else:
-            if check_viewable(world_id, user_id):
+            if check_viewable(world_id, user_id)['viewable']:
                 npc_query = """
                         SELECT npcs.id, name FROM city_npc_linker
                             INNER JOIN npcs ON city_npc_linker.npc_id = npcs.id

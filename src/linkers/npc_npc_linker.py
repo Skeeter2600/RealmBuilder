@@ -161,7 +161,7 @@ def get_associated_npcs(user_id, session_key, npc_id):
             npc_1_results = cur.execute(npc1_query, [npc_id])
             npc_2_results = cur.execute(npc2_query, [npc_id])
         else:
-            if check_viewable(world_id, user_id):
+            if check_viewable(world_id, user_id)['viewable']:
                 npc2_query = """
                     SELECT npcs.id, name FROM npc_npc_linker
                         INNER JOIN npcs ON npc_npc_linker.npc_2_id = npcs.id

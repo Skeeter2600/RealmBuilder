@@ -19,15 +19,21 @@ class MyTestCase(unittest.TestCase):
         beck_info = login_user('Beck', 'RiamChesteroot26')
 
         # bad user session key combo
-        outcome = add_world('Test World', 1, taylor_info[0])
-        self.assertFalse(outcome[0], "should have been bad session key")
+        outcome = add_world('Test World', 1, taylor_info['session_key'])
+        self.assertEqual(outcome['world_id'], -1)
 
-        outcome = add_world('Test World', taylor_info[1], taylor_info[0])
-        self.assertTrue(outcome[0], "should have been good to make")
+        outcome = add_world('Test World', taylor_info['user_id'], taylor_info['session_key'])
+        self.assertNotEquals(outcome['world_id'], -1)
 
-        world_id = outcome[1]
+        world_id = outcome['world_id']
 
         expected = {'valid': True,
+                    'like_dislike_info': {
+                        'dislikes': 0,
+                        'likes': 0,
+                        'user_dislike': False,
+                        'user_like': False
+                    },
                     'name': 'Test World',
                     'description': '',
                     'npcs': [],
@@ -40,15 +46,15 @@ class MyTestCase(unittest.TestCase):
                     }
 
         # get info by user with bad session key
-        outcome = get_world_details(world_id, 1, taylor_info[0])
+        outcome = get_world_details(world_id, 1, taylor_info['session_key'])
         self.assertFalse(outcome['valid'], "should have not been a good session")
 
         # get info by user not in world
-        outcome = get_world_details(world_id, beck_info[1], beck_info[0])
+        outcome = get_world_details(world_id, beck_info['user_id'], beck_info['session_key'])
         self.assertFalse(outcome['valid'], "should have not been a good session")
 
-        # get info by user with bad session key
-        outcome = get_world_details(world_id, taylor_info[1], taylor_info[0])
+        # get info by user with good session key
+        outcome = get_world_details(world_id, taylor_info['user_id'], taylor_info['session_key'])
         self.assertEqual(expected, outcome, "should have gotten the right info")
 
     def test_delete_world(self):
@@ -62,13 +68,19 @@ class MyTestCase(unittest.TestCase):
         taylor_info = login_user('Taylor', 'TomathyPickles123')
         beck_info = login_user('Beck', 'RiamChesteroot26')
 
-        outcome = delete_world(3, taylor_info[1], taylor_info[0])
+        outcome = delete_world(3, taylor_info['user_id'], taylor_info['session_key'])['result']
         self.assertFalse(outcome, "Should not be able to delete world")
 
-        outcome = delete_world(3, beck_info[1], beck_info[0])
+        outcome = delete_world(3, beck_info['user_id'], beck_info['session_key'])['result']
         self.assertTrue(outcome, "Should have been able to delete world")
 
         expected = {'valid': False,
+                    'like_dislike_info': {
+                        'dislikes': 0,
+                        'likes': 0,
+                        'user_dislike': False,
+                        'user_like': False
+                    },
                     'name': '',
                     'description': '',
                     'npcs': [],
@@ -78,7 +90,7 @@ class MyTestCase(unittest.TestCase):
                     'user_list': []
                     }
 
-        outcome = get_world_details(3, beck_info[1], beck_info[0])
+        outcome = get_world_details(3, beck_info['user_id'], beck_info['session_key'])
         self.assertEqual(expected, outcome, "Shouldn't get info for non existent world")
 
     def test_edit_world(self):
@@ -98,19 +110,19 @@ class MyTestCase(unittest.TestCase):
                   'public': False
                   }
 
-        outcome = get_world_details(3, jacob_info[1], jacob_info[0])
-        self.assertTrue(outcome['valid'], "The world is not public, so he shouldn't see it")
+        outcome = get_world_details(3, jacob_info['user_id'], jacob_info['session_key'])['valid']
+        self.assertTrue(outcome, "The world is not public, so he shouldn't see it")
 
-        outcome = edit_world(3, taylor_info[1], taylor_info[0], values)
+        outcome = edit_world(3, taylor_info['user_id'], taylor_info['session_key'], values)['result']
         self.assertFalse(outcome, "Taylor should not be able to edit the world")
 
-        outcome = edit_world(3, beck_info[1], beck_info[0], values)
+        outcome = edit_world(3, beck_info['user_id'], beck_info['session_key'], values)['result']
         self.assertTrue(outcome, "Beck should be able to edit the world")
 
-        outcome = get_world_details(3, jacob_info[1], jacob_info[0])
-        self.assertFalse(outcome['valid'], "The world is public now")
+        outcome = get_world_details(3, jacob_info['user_id'], jacob_info['session_key'])['valid']
+        self.assertFalse(outcome, "The world is public now")
 
-        outcome = get_world_details(3, beck_info[1], beck_info[0])
+        outcome = get_world_details(3, beck_info['user_id'], beck_info['session_key'])
         self.assertTrue(outcome['valid'], "The world is public, so he should see it")
         self.assertEqual(values['name'], outcome['name'], "Didn't get the right details")
         self.assertEqual(values['description'], outcome['description'], "Didn't get the right details")
@@ -127,37 +139,37 @@ class MyTestCase(unittest.TestCase):
         jacob_info = login_user('Jacob', 'MarkFellowsRulez')
 
         # look at private world not in
-        outcome = get_world_details(1, jacob_info[1], jacob_info[0])
+        outcome = get_world_details(1, jacob_info['user_id'], jacob_info['session_key'])
         self.assertFalse(outcome['valid'], "Shouldn't see a private world")
 
         # try to join private world publicly
-        outcome = join_world_public(1, jacob_info[1], jacob_info[0])
+        outcome = join_world_public(1, jacob_info['user_id'], jacob_info['session_key'])['result']
         self.assertFalse(outcome, "World is private, can't join publicly")
 
         # get member count before join
-        member_count_before = len(get_world_details(3, beck_info[1], beck_info[0])['user_list'])
+        member_count_before = len(get_world_details(3, beck_info['user_id'], beck_info['session_key'])['user_list'])
 
         # join the world publicly
-        outcome = join_world_public(3, jacob_info[1], jacob_info[0])
+        outcome = join_world_public(3, jacob_info['user_id'], jacob_info['session_key'])['result']
         self.assertTrue(outcome, "World is public, can join publicly")
 
         # get member count after join
-        member_count_after = len(get_world_details(3, beck_info[1], beck_info[0])['user_list'])
+        member_count_after = len(get_world_details(3, beck_info['user_id'], beck_info['session_key'])['user_list'])
         self.assertEqual(member_count_before+1, member_count_after, "didn't join properly")
 
         # try to join private world privately
-        outcome = join_world_private(1, 8, jacob_info[1], jacob_info[0])
+        outcome = join_world_private(1, 8, jacob_info['user_id'], jacob_info['session_key'])['result']
         self.assertFalse(outcome, "isn't an admin or owner of the world")
 
         # get member count before join
-        member_count_before = len(get_world_details(1, beck_info[1], beck_info[0])['user_list'])
+        member_count_before = len(get_world_details(1, beck_info['user_id'], beck_info['session_key'])['user_list'])
 
         # have beck add jacob to the world
-        outcome = join_world_private(1, 8, beck_info[1], beck_info[0])
+        outcome = join_world_private(1, 8, beck_info['user_id'], beck_info['session_key'])['result']
         self.assertTrue(outcome, "is an admin or owner of the world")
 
         # get member count after join
-        member_count_after = len(get_world_details(1, beck_info[1], beck_info[0])['user_list'])
+        member_count_after = len(get_world_details(1, beck_info['user_id'], beck_info['session_key'])['user_list'])
         self.assertEqual(member_count_before + 1, member_count_after, "didn't join properly")
 
     def test_get_owner(self):
@@ -195,19 +207,19 @@ class MyTestCase(unittest.TestCase):
         jacob_info = login_user('Jacob', 'MarkFellowsRulez')
 
         # no permission for private world
-        outcome = get_world_user_list(1, jacob_info[1], jacob_info[0])
+        outcome = get_world_user_list(1, jacob_info['user_id'], jacob_info['session_key'])
         self.assertEqual([], outcome, "shouldn't see any users in world that's private")
 
         # in private world
-        outcome = get_world_user_list(5, ryan_c_info[1], ryan_c_info[0])
+        outcome = get_world_user_list(5, ryan_c_info['user_id'], ryan_c_info['session_key'])
         self.assertEqual(3, len(outcome), 'should have 3 users in Out of Touch')
 
         # from public world not in it
-        outcome = get_world_user_list(3, jacob_info[1], jacob_info[0])
+        outcome = get_world_user_list(3, jacob_info['user_id'], jacob_info['session_key'])
         self.assertEqual(6, len(outcome), 'should have 6 users in Saviors Cradle')
 
         # from public world in it
-        outcome = get_world_user_list(3, beck_info[1], beck_info[0])
+        outcome = get_world_user_list(3, beck_info['user_id'], beck_info['session_key'])
         self.assertEqual(6, len(outcome), 'should have 6 users in Saviors Cradle')
 
     def test_world_search(self):
@@ -238,10 +250,10 @@ class MyTestCase(unittest.TestCase):
             {'id': 6, 'name': 'Real World'}
         ]
 
-        outcome = search_world('a', None, 1, beck_info[1], beck_info[0])
+        outcome = search_world('a', None, 1, beck_info['user_id'], beck_info['session_key'])
         self.assertEqual(beck_expected, outcome, "didn't get the right worlds")
 
-        outcome = search_world('a', None, 1, taylor_info[1], taylor_info[0])
+        outcome = search_world('a', None, 1, taylor_info['user_id'], taylor_info['session_key'])
         self.assertEqual(taylor_expected, outcome, "didn't get the right worlds")
 
         beck_expected = [
@@ -249,7 +261,7 @@ class MyTestCase(unittest.TestCase):
             {'id': 4, 'name': "Three Lords Sword Coast"}
         ]
 
-        outcome = search_world('Sword Coast', None, 1, beck_info[1], beck_info[0])
+        outcome = search_world('Sword Coast', None, 1, beck_info['user_id'], beck_info['session_key'])
         self.assertEqual(beck_expected, outcome, "didn't get the right worlds")
 
 

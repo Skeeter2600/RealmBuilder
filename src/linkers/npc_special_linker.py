@@ -158,7 +158,7 @@ def get_specials_by_npc(user_id, session_key, npc_id):
                     """
             cur.execute(special_query, [npc_id])
         else:
-            if check_viewable(world_id, user_id):
+            if check_viewable(world_id, user_id)['viewable']:
                 special_query = """
                     SELECT specials.id, name FROM npc_special_linker
                         INNER JOIN specials ON npc_special_linker.special_id = specials.id
@@ -207,7 +207,7 @@ def get_npcs_by_special(user_id, session_key, special_id):
                 """
             cur.execute(npc_query, [special_id])
         else:
-            if check_viewable(world_id, user_id):
+            if check_viewable(world_id, user_id)['viewable']:
                 npc_query = """
                     SELECT npcs.id, name FROM npc_special_linker
                         INNER JOIN npcs ON npc_special_linker.npc_id = npcs.id

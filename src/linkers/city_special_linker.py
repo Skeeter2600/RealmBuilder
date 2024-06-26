@@ -161,7 +161,7 @@ def get_cities_by_special(user_id, session_key, special_id):
             cur.execute(city_query, [special_id])
             outcome = cur.fetchall()
         else:
-            if check_viewable(world_id, user_id):
+            if check_viewable(world_id, user_id)['viewable']:
                 city_query = """
                     SELECT cities.id, name FROM city_special_linker
                         INNER JOIN cities ON city_special_linker.city_id = cities.id
@@ -212,7 +212,7 @@ def get_specials_by_city(user_id, session_key, city_id):
             cur.execute(specials_query, [city_id])
             outcome = cur.fetchall()
         else:
-            if check_viewable(world_id, user_id):
+            if check_viewable(world_id, user_id)['viewable']:
                 specials_query = """
                     SELECT specials.id, name FROM city_special_linker
                         INNER JOIN specials ON city_special_linker.city_id = specials.id

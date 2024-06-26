@@ -1,14 +1,17 @@
 
 from pydantic import BaseModel
 
-# User Classes
-class LoginFormat(BaseModel):
-    username: str
-    password: str
+#general classes
 
 class IdSessionKeyFormat(BaseModel):
     user_id: int
     session_key: str
+
+
+# User Classes
+class LoginFormat(BaseModel):
+    username: str
+    password: str
 
 class NewUserFormat(BaseModel):
     username: str
@@ -25,3 +28,14 @@ class UserEditFormat(BaseModel):
     user_id: int
     session_key: str
     details: UserDetailsFormat
+
+# Worlds
+class WorldElementsFormat(BaseModel):
+    name: str
+    description: str
+    public: bool
+
+class WorldJoinPrivateFormat(BaseModel):
+    user_id: int
+    admin_id: int
+    session_key: str

@@ -37,7 +37,9 @@ def add_world(name, owner_id, session_key):
     :param owner_id: the id of the user who made the world
     :param session_key: the supposed session key of the user
 
-    :return: [created boolean, city id (-1 if failed)]
+    :return: { result: bool,
+               world_id: int (-1 if failed)
+              }
     """
     if check_session_key(owner_id, session_key):
         conn = connect()
@@ -260,7 +262,7 @@ def get_world_admin_list(world_id, user_id, session_key):
             }]
     """
     if check_session_key(user_id, session_key):
-        if check_viewable(world_id, user_id):
+        if check_viewable(world_id, user_id)['viewable']:
             conn = connect()
             cur = conn.cursor()
 
@@ -299,7 +301,7 @@ def get_world_user_list(world_id, user_id, session_key):
             }]
     """
     if check_session_key(user_id, session_key):
-        if check_viewable(world_id, user_id):
+        if check_viewable(world_id, user_id)['viewable']:
             conn = connect()
             cur = conn.cursor()
 
@@ -364,8 +366,8 @@ def get_world_details(world_id, user_id, session_key):
                                profile_picture: user's profile picture}]
             }
     """
-    access_check = check_viewable(world_id, user_id)
-    if access_check["viewable"]:
+    access_check = check_viewable(world_id, user_id)['viewable']
+    if access_check:
         if check_session_key(user_id, session_key) or access_check["public"]:
             conn = connect()
             cur = conn.cursor()
@@ -399,7 +401,7 @@ def get_world_details(world_id, user_id, session_key):
                 world_info['cities'] = new_info['cities']
                 world_info['specials'] = new_info['specials']
 
-                world_info['comments'] = get_component_comments(world_id, 'worlds')
+                world_info['comments'] = get_component_comments(user_id, world_id, 'worlds')
                 world_info['user_list'] = get_world_user_list(world_id, user_id, session_key)
 
                 return world_info

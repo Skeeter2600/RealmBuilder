@@ -19,21 +19,21 @@ def load_data():
 
     add_users = """
         INSERT INTO users(username, password, public, email, bio) VALUES 
-            ('Beck', '6bdb83aeccb26b1f038953bc2b140f4ef1aadd4313413f3496b2f6fac84f0696f5dff73d3dd7a23663262c874757242449f6abbdb6190352c16eb383943846e9',
+            ('Beck', crypt('RiamChesteroot26', gen_salt('bf')),
                 TRUE, 'skeeter26@gmail.com', 'Okay buddy!'),
-            ('RyanR', '4648a2fe2a26ae6b199d72cab221ed85640ede7bd107579e6a1956ce95aaafd61e5867f8c3d4ad9ba465e145e66c030db88e41a1555239161570d799e39ad5e1', 
+            ('RyanR', crypt('PabloWeegee69', gen_salt('bf')), 
                 FALSE, 'carpet_s@yahoo.com', 'Huh?'),
-            ('RyanC', 'c9f0792a65687739f20b95d00e1fd948a7426be26d581027b8ea6102e0209a8687c225b4c3634da8274a8f81589acff6161d5e8ac5fdec0f4742f4005a8b920f',
+            ('RyanC', crypt('ThuaccTwumps', gen_salt('bf')),
                 FALSE, 'KabumJr@gmail.com', 'Greetings.'),
-            ('Charles', '0057e1db257e769b47aa441679714abc8e49c303168e0352fb42ddfd334caa7c046178133463ecf2dfbf4ccab159464c6a6a1d89f6791b92e0a488eafd487150',
+            ('Charles', crypt('CalvionNeedsAA', gen_salt('bf')),
                 TRUE, 'Chazam@yahoo.com', 'HUH!?!'),
-            ('Nolan', '07e611ce413b6ba6593c43ee55505abffd8aa6565b9946c12498369428b1c91c13b079f648f4bc5f5507d4ac1b27b670d6032d0d720bdbcae59f9fc377f7f298',
+            ('Nolan', crypt('TinkerTillYaMakeIt', gen_salt('bf')),
                 TRUE, 'pugalicious@gmail.com', 'Howdy!'),
-            ('Taylor', 'e2ccce9bc27ac9f86b7d610f88b7138906b5c2f1ed66be4e76ef1f67698080610fae6ed5b06c3911f3a3c769860808ed0264be1e96eb7c3ef2d59d615107095b',
+            ('Taylor', crypt('TomathyPickles123', gen_salt('bf')),
                 TRUE, 'biggwatt@gmail.com', 'Are you kidding me?'),
-            ('Josh', 'a3a47eb80147656bc1842d1c124880f73ee8fc029304853cc84591c41f2d585f1be0e551404b2d68e40ac9cc6cc795d93a08b89f69bdc5b7b54e57738c51ed6d', 
+            ('Josh', crypt('ShadowWatcher58', gen_salt('bf')),
                 FALSE, 'JoshyBigMac@aol.com', '*Laughs*'),
-            ('Jacob', 'b696bed74199f2d07ec58a7c12bdb6c58f680200eadb06ab687e94c1b762f5e7056bd0a62e869e399bd003d930905d84e38cddf7f900e2db7433883e9aee501a', 
+            ('Jacob', crypt('MarkFellowsRulez', gen_salt('bf')),
                 TRUE, 'gumbo2600@gmail.com', 'Bruh.')
         """
 

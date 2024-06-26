@@ -1,8 +1,8 @@
 import secrets
+import hashlib
 
 from src.utils.db_tools import check_session_key
 from src.utils.db_utils import connect
-from argon2 import PasswordHasher
 
 
 def rebuild_users_table():
@@ -54,15 +54,12 @@ def create_user(username, password, email):
         conn.close()
         return {'result': "A user with that username already exists"}
 
-    ph = PasswordHasher()
-    encrypted = ph.hash(password)
-
     add_user = """
         INSERT INTO users(username, password, email) VALUES
-        (%s, %s, %s)
+        (%s, crypt(%s, gen_salt('bf')), %s)
         RETURNING id
         """
-    cur.execute(add_user, (username, encrypted, email))
+    cur.execute(add_user, (username, password, email))
     outcome = cur.fetchall()
 
     if outcome == ():
@@ -279,27 +276,20 @@ def login_user(username, password):
     key for their current session
     :param username: the user's username
     :param password: the user's password
+    ''$argon2id$v=19$m=65536,t=3,p=4$aUuoPYQkYjl7DvEDKmsSTw$dhZiv08n6zNiT9xz5jmRxppY5U9Gke9dc036r6+1fpY'
     :return: the session key of successful and user id, error string if not
     """
     conn = connect()
     cur = conn.cursor()
 
-    ph = PasswordHasher()
-    encrypted = ph.hash(password)
-
     request = """
         SELECT session_key, password FROM users
-        WHERE users.username = %s and users.password = %s
+        WHERE users.username = %s and users.password = crypt(%s, password)
         """
-    cur.execute(request, (username, encrypted))
+    cur.execute(request, (username, password))
     outcome = cur.fetchall()
 
     if not outcome:
-        conn.close()
-        return {'session_key': 0, 'user_id': -1}
-
-    if not ph.verify(outcome[0][1], password):
-        conn.commit()
         conn.close()
         return {'session_key': 0, 'user_id': -1}
 
@@ -307,10 +297,10 @@ def login_user(username, password):
     session_key_request = """
         UPDATE users
         SET session_key = %s
-        WHERE users.username = %s and users.password = %s
+        WHERE users.username = %s and users.password = crypt(%s, password)
         returning id
         """
-    cur.execute(session_key_request, (session_key, username, encrypted))
+    cur.execute(session_key_request, (session_key, username, password))
     user_id = cur.fetchall()[0][0]
 
     conn.commit()

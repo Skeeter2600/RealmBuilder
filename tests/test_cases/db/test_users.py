@@ -21,8 +21,8 @@ class MyTestCase(unittest.TestCase):
               "    password: password\n"
               "    email: test1@test.com\n")
         result = create_user('Beck', 'password', 'test1@test.com')
-        print("logging in returned: '" + result + "' (should be 'A user with that username already exists')\n\n")
-        self.assertEqual(result, "A user with that username already exists",
+        print("logging in returned: '" + result['result'] + "' (should be 'A user with that username already exists')\n\n")
+        self.assertEqual(result['result'], "A user with that username already exists",
                          "shouldn't work with user with the same username")
 
         print("\n Making a new account where another individual had a different username:\n"
@@ -30,8 +30,8 @@ class MyTestCase(unittest.TestCase):
               "    password: password\n"
               "    email: test1@test.com\n")
         result = create_user('Beck Jr', 'password', 'test1@test.com')
-        print("logging in returned: '" + result + "' (should be 'Success!')\n\n")
-        self.assertEqual(result, "Success!", "should work as it is unique")
+        print("logging in returned: '" + result['result'] + "' (should be 'Success!')\n\n")
+        self.assertEqual(result['result'], "Success!", "should work as it is unique")
 
     def test_delete_user(self):
         """
@@ -44,12 +44,12 @@ class MyTestCase(unittest.TestCase):
 
         ryan_info = login_user('RyanR', 'PabloWeegee69')
 
-        outcome = delete_user(1, ryan_info[0])
+        outcome = delete_user(1, ryan_info['session_key'])
         print("Delete request returned: " + str(outcome) + ". (should be False)")
         self.assertFalse(outcome, "Ryan shouldn't be able to delete Beck")
 
         print("\n Deleting the user RyanR by Ryan R:\n")
-        outcome = delete_user(ryan_info[1], ryan_info[0])
+        outcome = delete_user(ryan_info['user_id'], ryan_info['session_key'])
         print("Delete request returned: " + str(outcome) + ". (should be True)")
         self.assertTrue(outcome, "Ryan should be able to delete himself")
 
@@ -76,10 +76,10 @@ class MyTestCase(unittest.TestCase):
                    'public': True,
                    'bio': 'Testing'}
 
-        outcome = edit_account(1, ryan_info[0], details)
+        outcome = edit_account(1, ryan_info['session_key'], details)
         self.assertFalse(outcome, "Ryan shouldn't be able to edit Beck")
 
-        outcome = edit_account(ryan_info[1], ryan_info[0], details)
+        outcome = edit_account(ryan_info['user_id'], ryan_info['session_key'], details)
         self.assertTrue(outcome, "Ryan should be able to edit himself")
 
         check_values = {'username': 'Ryan2',
@@ -131,8 +131,8 @@ class MyTestCase(unittest.TestCase):
               "    password: RiamChesteroot1\n")
         result = login_user('Beck', 'RiamChesteroot1')
 
-        print("logging in returned: " + result[0] + " (should be 'Bad username or password')\n\n")
-        self.assertEqual(result[0], "Bad username or password", "Shouldn't have been the right password")
+        print("logging in returned: " + str(result['user_id']) + " (should be '-1')\n\n")
+        self.assertEqual(result['user_id'], -1, "Shouldn't have been the right password")
 
         # logging in user that doesn't exist
         print("Logging in an existing user with information:\n"
@@ -141,8 +141,8 @@ class MyTestCase(unittest.TestCase):
 
         result = login_user('billyBob67', 'password123456')
 
-        print("logging in returned: " + result[0] + " (should be 'Bad username or password')\n\n")
-        self.assertEqual(result[0], "Bad username or password", "Shouldn't have been the right password")
+        print("logging in returned: " + str(result['user_id']) + " (should be '-1')\n\n")
+        self.assertEqual(result['user_id'], -1, "Shouldn't have been the right password")
 
         # logging in existing user with good credentials
         print("\nLogging in an existing user with bad password:\n"
@@ -150,15 +150,15 @@ class MyTestCase(unittest.TestCase):
               "    password: RiamChesteroot26\n")
         new_key = login_user('Beck', 'RiamChesteroot26')
 
-        print("logging in returned: " + new_key[0] + " (should be [session key, user_id])\n\n")
-        self.assertNotEqual(new_key[0], "Bad username or password", "Should have been the right password")
+        print("logging in returned: " + str(new_key['user_id']) + " (should be [session key, user_id])\n\n")
+        self.assertEqual(new_key['user_id'], 1, "Should have been the right password")
 
         # try with bad session key
         print("\nChecking a bad session key:\n"
               "    user id: 1 (Beck)\n"
               "    bad key: test\n"
-              "    good session key:" + new_key[0] + "\n")
-        result = check_session_key(new_key[1], 'test')
+              "    good session key:" + new_key['session_key'] + "\n")
+        result = check_session_key(new_key['user_id'], 'test')
 
         print("check returned: " + str(result) + " (should be False)\n\n")
         self.assertFalse(result, "shouldn't have been the proper session key")
@@ -166,8 +166,8 @@ class MyTestCase(unittest.TestCase):
         # try with good new session key
         print("\nChecking a good session key:\n"
               "    user id: 1 (Beck)\n"
-              "    session key:" + new_key[0] + "\n")
-        result = check_session_key(new_key[1], new_key[0])
+              "    session key:" + new_key['session_key'] + "\n")
+        result = check_session_key(new_key['user_id'], new_key['session_key'])
 
         print("check returned: " + str(result) + " (should be True)\n\n")
         self.assertTrue(result, "should have been the proper session key")
@@ -184,69 +184,69 @@ class MyTestCase(unittest.TestCase):
         taylor_info = login_user('Taylor', 'TomathyPickles123')
         josh_info = login_user('Josh', 'ShadowWatcher58')
 
-        self.assertNotEqual(taylor_info[0], "Bad username or password", "Should have been the right password")
-        self.assertNotEqual(josh_info[0], "Bad username or password", "Should have been the right password")
+        self.assertNotEqual(taylor_info['user_id'], -1, "Should have been the right password")
+        self.assertNotEqual(josh_info['user_id'], -1, "Should have been the right password")
         print("\nLogging in two users:\n"
               "    user 1: \n"
               "        Username:    Taylor\n"
               "        ID:          6\n"
               "        Password:    TomathyPickles123\n"
-              "        Session Key: " + taylor_info[0] + "\n"
+              "        Session Key: " + taylor_info['session_key'] + "\n"
               "    user 2: \n"
               "        Username:    Josh\n"
               "        ID:          7\n"
               "        Password:    ShadowWatcher58\n"
-              "        Session Key: " + josh_info[0] + "\n\n")
+              "        Session Key: " + josh_info['session_key'] + "\n\n")
 
         print("\nValidating both sessions:")
-        taylor_result = check_session_key(6, taylor_info[0])
-        josh_result = check_session_key(7, josh_info[0])
+        taylor_result = check_session_key(6, taylor_info['session_key'])
+        josh_result = check_session_key(7, josh_info['session_key'])
 
         print("    check returned: \n"
               "        Taylor Results: " + str(taylor_result) + " (should be True)\n"
               "        Josh Results:   " + str(josh_result) + " (should be True)\n\n")
-        self.assertTrue(taylor_info[0], "should have been the proper session key for Taylor")
-        self.assertTrue(josh_info[0], "should have been the proper session key for Josh")
+        self.assertTrue(taylor_info, "should have been the proper session key for Taylor")
+        self.assertTrue(josh_info, "should have been the proper session key for Josh")
 
         print("\nTrying to log Taylor out with bad session key:")
-        taylor_result = logout_user(taylor_info[1], 'test')
+        taylor_result = logout_user(taylor_info['user_id'], 'test')
 
-        print("     check returned: " + taylor_result + " (should be 'bad request')\n\n")
-        self.assertEqual(taylor_result, "bad request", "shouldn't have been the proper session key")
+        print("     check returned: " + taylor_result['result'] + " (should be 'bad request')\n\n")
+        self.assertEqual(taylor_result['result'], "bad request", "shouldn't have been the proper session key")
 
         print("\nTrying to log Josh out with bad session key:")
-        josh_result = logout_user(josh_info[1], 'test')
+        josh_result = logout_user(josh_info['user_id'], 'test')
 
-        print("     check returned: " + josh_result + " (should be 'bad request')\n\n")
-        self.assertEqual(josh_result, "bad request", "shouldn't have been the proper session key")
+        print("     check returned: " + josh_result['result'] + " (should be 'bad request')\n\n")
+        self.assertEqual(josh_result['result'], "bad request", "shouldn't have been the proper session key")
 
         print("\nTrying to log Josh out with Taylor's key:")
-        josh_result = logout_user(7, taylor_info[0])
+        josh_result = logout_user(7, taylor_info['session_key'])
 
-        print("    check returned: " + josh_result + " (should be 'bad request')\n\n")
-        self.assertEqual(josh_result, "bad request", "shouldn't have been the proper session key")
+        print("    check returned: " + josh_result['result'] + " (should be 'bad request')\n\n")
+        self.assertEqual(josh_result['result'], "bad request", "shouldn't have been the proper session key")
 
         print("\nTrying to log Taylor out with Josh's key:")
-        taylor_result = logout_user(6, josh_info[1])
+        taylor_result = logout_user(6, josh_info['session_key'])
 
-        print("    check returned: " + taylor_result + " (should be 'bad request')\n\n")
-        self.assertEqual(taylor_result, "bad request", "shouldn't have been the proper session key")
+        print("    check returned: " + taylor_result['result'] + " (should be 'bad request')\n\n")
+        self.assertEqual(taylor_result['result'], "bad request", "shouldn't have been the proper session key")
 
         print("\nTrying to log Taylor out with Taylor's key:")
-        taylor_result = logout_user(6, taylor_info[0])
+        taylor_result = logout_user(6, taylor_info['session_key'])
 
-        print("    check returned: " + taylor_result + " (should be 'signed out')\n\n")
-        self.assertEqual(taylor_result, "signed out", "should have been the proper session key")
+        print("    check returned: " + taylor_result['result'] + " (should be 'signed out')\n\n")
+        self.assertEqual(taylor_result['result'], "signed out", "should have been the proper session key")
 
         print("\nTrying to log Josh out with Josh's key:")
-        josh_result = logout_user(7, josh_info[0])
+        josh_result = logout_user(7, josh_info['session_key'])
 
-        print("    check returned: " + josh_result + " (should be 'signed out')\n\n")
-        self.assertEqual(josh_result, "signed out", "should have been the proper session key")
+        print("    check returned: " + josh_result['result'] + " (should be 'signed out')\n\n")
+        self.assertEqual(josh_result['result'], "signed out", "should have been the proper session key")
 
         print("\nTrying old session keys:")
-        taylor_result = check_session_key(taylor_info[1], taylor_info[0])
-        josh_result = check_session_key(josh_info[1], josh_info[0])
+        taylor_result = check_session_key(taylor_info['user_id'], taylor_info['session_key'])
+        josh_result = check_session_key(josh_info['user_id'], josh_info['session_key'])
 
         print("    check returned: \n"
               "        Taylor Results: " + str(taylor_result) + " (should be False)\n"
@@ -255,8 +255,8 @@ class MyTestCase(unittest.TestCase):
         self.assertFalse(josh_result, "should not have been the proper session key for Josh")
 
         print("\nTrying blank (logged out users have no session key):")
-        taylor_result = check_session_key(taylor_info[1], taylor_info[0])
-        josh_result = check_session_key(josh_info[1], josh_info[0])
+        taylor_result = check_session_key(taylor_info['user_id'], taylor_info['session_key'])
+        josh_result = check_session_key(josh_info['user_id'], josh_info['session_key'])
 
         print("    check returned: \n"
               "        Taylor Results: " + str(taylor_result) + " (should be False)\n"
@@ -276,10 +276,10 @@ class MyTestCase(unittest.TestCase):
         taylor_info = login_user('Taylor', 'TomathyPickles123')
         josh_info = login_user('Josh', 'ShadowWatcher58')
 
-        outcome = search_user('o', None, 1, josh_info[1], josh_info[0])
+        outcome = search_user('o', None, 1, josh_info['user_id'], josh_info['session_key'])
         self.assertEqual(3, len(outcome), "Should have gotten the other 3 users with o in their usernames")
 
-        outcome = search_user('o', None, 1, taylor_info[1], taylor_info[0])
+        outcome = search_user('o', None, 1, taylor_info['user_id'], taylor_info['session_key'])
         self.assertEqual(3, len(outcome), "Should have gotten the 3 users with o in their usernames and are public")
 
 

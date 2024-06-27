@@ -5,7 +5,8 @@ from src.api.resources.request_formats import LoginFormat, IdSessionKeyFormat, N
 import src.components.users as users
 
 router = APIRouter(
-    tags=['Users']
+    tags=['Users'],
+    prefix='/user'
 )
 
 
@@ -74,7 +75,7 @@ async def editUser(edit_params: UserEditFormat):
     return users.edit_account(edit_params.user_id, edit_params.session_key, edit_params.details)
 
 
-@router.get("/user/{user_id}")
+@router.get("/{user_id}")
 async def getUser(user_id: int):
     """
     This function will get public the info on a user
@@ -91,7 +92,7 @@ async def getUser(user_id: int):
     return users.get_user_public(user_id)
 
 
-@router.post("/user/private/{user_id}")
+@router.post("/private/{user_id}")
 async def getUserPrivate(user_id: int, session_key: str):
     """
     This function will get private the info on a user

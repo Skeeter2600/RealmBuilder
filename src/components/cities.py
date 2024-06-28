@@ -55,7 +55,7 @@ def add_city(user_id, session_key, details):
                       description: city description,
                       associated_npcs: [id: npc id],
                       associated_specials: [id: special id],
-                      }
+            w          }
 
     :return: [created boolean, city id (-1 if failed)]
     """

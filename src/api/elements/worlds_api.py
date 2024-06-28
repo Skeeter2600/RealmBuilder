@@ -52,7 +52,7 @@ async def update_world(world_id: int, user_details: IdSessionKeyFormat, elements
     """
     return worlds.edit_world(world_id, user_details.user_id, user_details.session_key, elements)
 
-@router.post('/join/public/{world_id}')
+@router.put('/join/public/{world_id}')
 async def join_world_public(world_id: int, user_details: IdSessionKeyFormat):
     """
     This function will allow a user to join a world
@@ -65,7 +65,7 @@ async def join_world_public(world_id: int, user_details: IdSessionKeyFormat):
     return worlds.join_world_public(world_id, user_details.user_id, user_details.session_key)
 
 
-@router.post('/join/private/{world_id}')
+@router.put('/join/private/{world_id}')
 async def join_world_private(world_id: int, join_details: WorldJoinPrivateFormat):
     """
     This function will allow a user to join a world

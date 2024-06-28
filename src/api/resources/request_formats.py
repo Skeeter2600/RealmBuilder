@@ -1,5 +1,7 @@
 
 from pydantic import BaseModel
+from typing import List
+
 
 #general classes
 
@@ -54,3 +56,31 @@ class EditCommentFormat(BaseModel):
     session_key: str
     comment_id: int
     comment: str
+
+# Cities
+
+class CityFormat(BaseModel):
+    world_id: int
+    name: str
+    images: List[str]
+    population: int
+    song: str
+    trades: str
+    aesthetic: str
+    description: str
+    associated_npc_ids: List[int]
+    associated_special_ids: List[int]
+
+class AddCityFormat(BaseModel):
+    user_id: int
+    session_key: str
+    details: CityFormat
+
+class EditCityFormat(BaseModel):
+    name: str
+    population: int
+    song: str
+    trades: str
+    aesthetic: str
+    description: str
+    revealed: bool

@@ -39,3 +39,18 @@ class WorldJoinPrivateFormat(BaseModel):
     user_id: int
     admin_id: int
     session_key: str
+
+# Comments
+class AddCommentFormat(BaseModel):
+    user_id: int
+    session_key: str
+    world_id: int
+    component_id: int
+    component_type: str
+    comment: str
+
+class EditCommentFormat(BaseModel):
+    user_id: int
+    session_key: str
+    comment_id: int
+    comment: str
